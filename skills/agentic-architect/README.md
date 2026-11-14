@@ -137,9 +137,9 @@ Every scenario is run through the skill on each host that has an API key configu
 
 | Scenario | Host | Result | Up-front q | Deferred q | Judge checks |
 |---|---|---|---|---|---|
-| S08-prompt-scope | claude | FAIL | 1/3 | 1/2 | 0/0 |
+| S08-prompt-scope | claude | FAIL | 2/3 | 2/2 | 11/13 |
 
-Last run: 2026-11-14 · trigger: workflow_dispatch · [workflow run](https://github.com/Geenie-AI/skills/actions/runs/43626768101).
+Last run: 2026-11-14 · trigger: workflow_dispatch · [workflow run](https://github.com/Geenie-AI/skills/actions/runs/43631793138).
 
 Non-blocking. Full output is in the workflow artifacts.
 <!-- eval-results:end -->
