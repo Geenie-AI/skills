@@ -73,6 +73,7 @@ jobs:
           service_account_id: ${{ vars.ANTHROPIC_SERVICE_ACCOUNT_ID || 'svac_01JWKCu1ZZ4kPtxMDVwjEBNP' }}
           workspace_id: ${{ vars.ANTHROPIC_WORKSPACE_ID || 'wrkspc_01SpcAkLhYsuwRVbt3ymRuTy' }}
       - name: Run baseline scenario
+        timeout-minutes: 45
         run: |
           scripts/run-scenario.sh --skill "${{ matrix.skill }}" --host "${{ inputs.host }}" \
             --scenario "${{ matrix.scenario }}" --answers "${{ matrix.answers }}" --label "${{ matrix.label }}" \
@@ -122,6 +123,7 @@ jobs:
           path: eval-out/
           merge-multiple: true
       - name: Run scenario
+        timeout-minutes: 45
         run: |
           scripts/run-scenario.sh --skill "${{ matrix.skill }}" --host "${{ inputs.host }}" \
             --scenario "${{ matrix.scenario }}" --answers "${{ matrix.answers }}" --label "${{ matrix.label }}" \

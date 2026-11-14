@@ -184,15 +184,33 @@ if [ "$JUDGE_ONLY" -eq 0 ]; then
     claude)
       # Docs: https://code.claude.com/docs/en/headless  (flags verified 2026-11-14)
       # acceptEdits lets the skill write files; Bash is limited to read-only
-      # inspection commands via permission-rule prefixes.
+      # inspection commands via permission-rule prefixes. stream-json keeps the
+      # full event log in $RUN_LOG and echoes one line per tool call, so a long
+      # run shows progress instead of looking hung.
       set +e
       (cd "$PROJECT" && claude -p "$(cat "$PROMPT_FILE")" \
-          --output-format json \
+          --output-format stream-json --verbose \
           --permission-mode acceptEdits \
           --allowedTools "Read,Write,Edit,Glob,Grep,Bash(wc *),Bash(ls *),Bash(cat *),Bash(find *),Bash(grep *),Bash(python3 *)" \
           ${MODEL:+--model "$MODEL"} \
-          ${CLAUDE_EXTRA_ARGS:-}) > "$RUN_LOG" 2> "$OUT/run-stderr.txt"
-      STATUS=$?
+          ${CLAUDE_EXTRA_ARGS:-} < /dev/null) 2> "$OUT/run-stderr.txt" \
+        | tee "$RUN_LOG" | python3 -u -c '
+import json, sys
+for line in sys.stdin:
+    try:
+        e = json.loads(line)
+    except ValueError:
+        continue
+    if e.get("type") == "assistant":
+        for c in e.get("message", {}).get("content", []):
+            if c.get("type") == "tool_use":
+                i = c.get("input", {})
+                arg = i.get("file_path") or i.get("command") or i.get("pattern") or ""
+                print("  .", c["name"], str(arg)[:100])
+    elif e.get("type") == "result":
+        print("  result:", e.get("subtype"), "| turns:", e.get("num_turns"), "| seconds:", round((e.get("duration_ms") or 0) / 1000))
+'
+      STATUS=${PIPESTATUS[0]}
       set -e
       ;;
     codex)
@@ -210,7 +228,7 @@ if [ "$JUDGE_ONLY" -eq 0 ]; then
           -o "$OUT/last-message.md" \
           ${MODEL:+-m "$MODEL"} \
           ${CODEX_EXTRA_ARGS:-} \
-          "$(cat "$PROMPT_FILE")" > "$RUN_LOG" 2> "$OUT/run-stderr.txt"
+          "$(cat "$PROMPT_FILE")" < /dev/null > "$RUN_LOG" 2> "$OUT/run-stderr.txt"
       STATUS=$?
       set -e
       ;;
