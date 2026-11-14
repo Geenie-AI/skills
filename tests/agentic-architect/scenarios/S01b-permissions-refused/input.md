@@ -2,6 +2,6 @@ Our HR reply pipeline hallucinates. It runs on Claude Code (the main session cal
 
 The problem: the drafted reply cites policy clauses that do not exist, and the JSON formatting step sometimes ignores the schema and just writes prose. We added "do not hallucinate" and a stronger instruction at the top and it changed nothing.
 
-The production prompt with the manual pasted in is at `artifacts/pipeline-system-prompt.full.md` (the prompt alone, with a placeholder where the manual goes, is `fixtures/artifacts/pipeline-system-prompt.md`; the manual alone is `artifacts/policy-corpus.md`). Three failure examples with what we wanted instead, and what we have tried, are in `artifacts/failures.md`.
+The production prompt with the manual pasted in is at `artifacts/pipeline-system-prompt.full.md` (the prompt alone, with a placeholder where the manual goes, is `artifacts/pipeline-system-prompt.md`; the manual alone is `artifacts/policy-corpus.md`). Three failure examples with what we wanted instead, and what we have tried, are in `artifacts/failures.md`.
 
 One constraint from the platform team: this has to stay one agent and one call. We cannot add orchestration or a vector store this quarter. Tools are fine.

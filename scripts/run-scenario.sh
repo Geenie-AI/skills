@@ -2,12 +2,13 @@
 # Drive one acceptance scenario of one skill through a host, then grade the result.
 #
 # Usage:
-#   scripts/run-scenario.sh --skill NAME --host claude|codex --scenario <dir-name-or-ID>
+#   scripts/run-scenario.sh --skill NAME [--host claude|codex] --scenario <dir-name-or-ID>
 #                           [--out DIR] [--model M] [--judge-only] [--keep]
 #                           [--answers FILE] [--label L] [--baseline DIR] [--dry-run]
 #
 #   --skill      A folder under skills/ (its scenarios live in tests/<skill>/scenarios/).
 #                Optional when the repository holds exactly one skill.
+#   --host       claude (default) or codex.
 #   --scenario   A directory name under tests/<skill>/scenarios/ (S02-hr-helpdesk)
 #                or its ID prefix (S02).
 #   --out        Where results.json, summary.md and the project live
@@ -39,7 +40,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 SKILL=""
-HOST=""
+HOST="claude"
 SCENARIO=""
 OUT=""
 MODEL=""
@@ -66,7 +67,7 @@ while [ $# -gt 0 ]; do
     --label) LABEL="${2:-}"; shift 2 ;;
     --baseline) BASELINE="${2:-}"; shift 2 ;;
     --dry-run) DRY_RUN=1; shift ;;
-    -h|--help) sed -n '2,36p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    -h|--help) sed -n '2,37p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) die "unknown argument: $1" ;;
   esac
 done
@@ -78,7 +79,6 @@ if [ -z "$SKILL" ]; then
   SKILL="$(python3 "$REPO" list)"
   [ "$(printf '%s\n' "$SKILL" | grep -c .)" -eq 1 ] || die "--skill is required (more than one skill in the repository)"
 fi
-[ -n "$HOST" ] || die "--host is required (claude or codex)"
 [ -n "$SCENARIO" ] || die "--scenario is required"
 case "$HOST" in claude|codex) ;; *) die "unknown host '$HOST'" ;; esac
 [ -f "$REPO_ROOT/skills/$SKILL/SKILL.md" ] || die "no skill at skills/$SKILL"
@@ -235,6 +235,8 @@ for line in sys.stdin:
                 print("  .", c["name"], str(arg)[:100])
     elif e.get("type") == "result":
         print("  result:", e.get("subtype"), "| turns:", e.get("num_turns"), "| seconds:", round((e.get("duration_ms") or 0) / 1000))
+        if e.get("is_error"):
+            print("run-scenario: host API error:", e.get("result"), file=sys.stderr, flush=True)
 ' "$RUN_LOG"
       STATUS=${PIPESTATUS[0]}
       set -e
@@ -322,6 +324,20 @@ esac
 JUDGE_STATUS=$?
 set -e
 [ "$JUDGE_STATUS" -eq 0 ] || echo "run-scenario: judge exited with status $JUDGE_STATUS" >&2
+# Claude Code reports API failures (credits, auth, rate limits) as a result
+# with is_error set and the reason in "result"; surface it instead of leaving
+# only "no parseable JSON" from the grader.
+if [ "$HOST" = "claude" ]; then
+  python3 -c '
+import json, sys
+try:
+    e = json.load(open(sys.argv[1]))
+except (OSError, ValueError):
+    sys.exit(0)
+if isinstance(e, dict) and e.get("is_error"):
+    print("run-scenario: judge API error:", e.get("result"), file=sys.stderr)
+' "$JUDGE_OUT"
+fi
 
 # --------------------------------------------------------------------------- #
 # 4. Score

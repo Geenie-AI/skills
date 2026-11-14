@@ -51,6 +51,7 @@ Restructuring justified by: <accuracy | cost, latency, maintainability, change r
 |---|---|---|---|---|---|---|---|
 | D1 | … | yes / no / beyond window / n/a | context / behavior / both | prompt / examples / tool / retrieval / fine-tune / split / route / merge / assign / schema | L0–L5 | yes / no → § 15 | <measured> |
 | A1 | audit P1: 5 responsibilities in one prompt | n/a | behavior | split | L0/L3 | yes | measured in § 4a |
+| D<n> | missing eval (optimize, none exists) | n/a | both | baseline eval ≥ 20 items | L5 | yes | Eval status in § 4 |
 
 ## 6. Context budget
 | Step | Budget (tokens) | Sees | Shielded from | Retrieval into step | Fresh context? |

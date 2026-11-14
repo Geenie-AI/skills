@@ -1,4 +1,4 @@
-Fix the drafting prompt. It is step 4 of our HR reply pipeline on Claude Code (Claude Sonnet). The drafting prompt is in `fixtures/artifacts/drafting-prompt.md`; it is the task 4 section of the big system prompt plus the conduct rules and category guidance it uses. Three failures with what we wanted instead are in `artifacts/failures.md`.
+Fix the drafting prompt. It is step 4 of our HR reply pipeline on Claude Code (Claude Sonnet). The drafting prompt is in `artifacts/drafting-prompt.md`; it is the task 4 section of the big system prompt plus the conduct rules and category guidance it uses. Three failures with what we wanted instead are in `artifacts/failures.md`.
 
 For context, the other steps are (we are not changing them this sprint):
 - Step 1 extract: pulls question, facts, missing facts and tone out of the employee email.

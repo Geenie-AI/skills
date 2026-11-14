@@ -11,7 +11,7 @@ answers:
   Q2: "Claude Code, Claude Sonnet."
   Q4: "Correct means every clause id cited exists under policies/ and the sentence it supports matches the clause text and numbers. Wrong citation or wrong number is incorrect."
   Q5: "None written down. We could write about 20 from last month's tickets within a week."
-  Q11: "See fixtures/artifacts/failures.md."
+  Q11: "See artifacts/failures.md."
   Q12: "Present in all three."
   Q13: "At the drafting step, roughly 100k tokens in context."
   Q14: "Nothing beyond adding do-not-hallucinate wording."

@@ -22,7 +22,7 @@ pull request (`.github/workflows/validate.yml`).
 ## Scenario evals (model required)
 
 ```bash
-scripts/run-scenario.sh --skill <name> --host claude --scenario S02      # needs the claude CLI
+scripts/run-scenario.sh --skill <name> --scenario S02                    # host defaults to claude; needs the claude CLI
 scripts/run-scenario.sh --skill <name> --host codex  --scenario S02      # needs the codex CLI
 scripts/run-scenario.sh --skill <name> --host claude --scenario S02 --dry-run   # build the project, no model call
 ```
@@ -52,7 +52,8 @@ skill or its tests. The `plan` job asks `scripts/skillrepo.py plan-eval` for
 the matrix: on a pull request only the affected scenarios run (everything of
 a skill when the skill folder, its harness files or the runner changed). Each
 host runs through the reusable `scenario-host.yml`: baselines first, then
-the matrix of runs. Claude Code authenticates with the run's GitHub OIDC
+the matrix of runs. Every skill evaluates on Claude Code by default; Codex
+runs only when a manual run picks `codex` or `all`. Claude Code authenticates with the run's GitHub OIDC
 token (Workload Identity Federation, see `docs/releasing.md`), so no key is
 stored; it is skipped on pull requests from forks. Codex is skipped when the
 `OPENAI_API_KEY` secret is absent. The `report` job posts a

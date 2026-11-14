@@ -7,7 +7,7 @@ budget:
   upfront_max: 5
   deferred_max: 3
 answers:
-  Q1: "Optimize; the agents are in fixtures/artifacts/helpdesk_agents.py and the trace export in fixtures/artifacts/helpdesk-trace-export.jsonl."
+  Q1: "Optimize; the agents are in artifacts/helpdesk_agents.py and the trace export in artifacts/helpdesk-trace-export.jsonl."
   Q11: "Confirm the three proposed rows from the trace export: t-8841 (carry-over misread), t-8902 (claimed to change bank details), t-8977 (invented relocation allowance)."
   Q12: "t-8841 yes; t-8902 yes; t-8977 no (no page exists)."
   Q13: "All in the policy_answer agent; context about 6k tokens (instructions plus five retrieved chunks). t-8902 went wrong at triage, which handed a payroll matter to policy_answer."

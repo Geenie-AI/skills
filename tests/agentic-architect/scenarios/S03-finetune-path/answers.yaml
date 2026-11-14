@@ -7,7 +7,7 @@ budget:
   upfront_max: 6
   deferred_max: 4
 answers:
-  Q1: "Optimize; the prompt and the log sample are in fixtures/artifacts/."
+  Q1: "Optimize; the prompt and the log sample are in artifacts/."
   Q2: "OpenAI Responses API, gpt-5. We can use gpt-5-mini if it holds the style."
   Q3: "Takes English product copy (title, short description, features, care) and produces the German version in Kessler house style."
   Q4: "Correct: faithful content and every house-style rule followed, so the editor changes nothing. Incorrect: any style edit needed, or a factual change."
@@ -17,7 +17,7 @@ answers:
   Q8: "The style guide is a Confluence page; the glossary is a spreadsheet."
   Q9: "The four labelled parts, the du form, title pattern, number formatting, glossary terms, no superlatives, imperative care instructions."
   Q10: "An editor reads the English, writes the German in house style from memory of the guide, checks numbers and the glossary, and signs it off."
-  Q11: "See fixtures/artifacts/logged-outputs-sample.md; 600 corrected rows in the review tool, exportable as JSONL."
+  Q11: "See artifacts/logged-outputs-sample.md; 600 corrected rows in the review tool, exportable as JSONL."
   Q12: "Present: every rule the model broke is stated in the prompt."
   Q13: "In the single call; the prompt is about 6k tokens and the input a few hundred."
   Q14: "Rewrote the rules twice, added the five examples (helped, 70% to 50% corrections), tried gpt-5-mini (worse style)."

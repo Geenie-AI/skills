@@ -7,7 +7,7 @@ budget:
   upfront_max: 3
   deferred_max: 2
 answers:
-  Q1: "Optimize; the drafting prompt is in fixtures/artifacts/drafting-prompt.md and the failures in artifacts/failures.md."
+  Q1: "Optimize; the drafting prompt is in artifacts/drafting-prompt.md and the failures in artifacts/failures.md."
   Q2: "Claude Code, Claude Sonnet."
   Q3: "Takes the extracted facts, the classification and the listed clauses, and produces the reply text with clause ids in brackets."
   Q4: "Correct: every statement is backed by a clause id that exists in the manual and says what the reply says; numbers match. Incorrect: an invented or misapplied clause id."

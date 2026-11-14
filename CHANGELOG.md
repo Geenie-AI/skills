@@ -30,6 +30,10 @@ model-facing file of any skill (checked by `scripts/validate.py --changed-files`
   `scripts/skillrepo.py sync`, which the `catalog` workflow runs on `main`.
 - One repository version and one changelog; releases are tagged `vX.Y.Z` and
   ship a zip per skill.
+- Scenario evals default to Claude Code for every skill:
+  `scripts/run-scenario.sh` no longer needs `--host`, and the `eval` workflow
+  (weekly, pull-request and manual runs) runs Codex only when a manual run
+  picks `codex` or `all`.
 - CI authenticates to the Claude API with GitHub's OIDC token through
   Anthropic Workload Identity Federation (`.github/actions/anthropic-oidc`);
   no Anthropic API key is stored in the repository.
@@ -51,9 +55,22 @@ model-facing file of any skill (checked by `scripts/validate.py --changed-files`
 - `scripts/install.sh --host generic` prints the pointer line only unless
   `--dest` is given, and refuses a target inside this repository's `skills/`
   folder.
+- Diagnosis (SKILL.md § 2, template § 5): an optimize run with no existing
+  eval adds a `missing eval` row at L5 whose lever is a baseline eval of
+  ≥ 20 items.
+- Changes (SKILL.md § 3 step 5): when failures were supplied, every doc § 11
+  change names at least one failure row; a change that fixes only audit rows
+  is labelled `hygiene (no failure targeted)`.
+- S08 expected checks: the schema row may sit at L0, L1 or L3; a seed eval
+  with an explicit plan to reach 20 items passes when Q5 says fewer exist;
+  changes may be labelled hygiene; deferred Q22 items are allowed.
+- S01 check 14: every change maps to a failure row or is labelled hygiene.
 
 #### Added
 
+- Scenario S08m-prompt-scope-mini: S08 with a ~5k-token policy excerpt in
+  place of the generated 90k-token manual, and eight merged checks, for a
+  cheaper smoke run of `prompt` scope.
 - `scripts/eval-report.py` builds the scenario-eval summary; scheduled and
   manual eval runs write it into the "Scenario eval results" section at the
   bottom of the skill's README and commit it.

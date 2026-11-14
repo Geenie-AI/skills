@@ -11,7 +11,7 @@
 11. The lever plan places prompt engineering and the split first, retrieval now against a context row, few-shot conditional on the baseline, and fine-tuning rejected. [R5.3, doc § 8]
 12. Rejected options lists fine-tuning with the gates that failed (G6.1 no baseline, G6.2 no examples). [G6.1, G6.2, doc § 14]
 13. The handoff policy sends a reply with unsupported claims after verification back to the retrieval step once with a widened query, then to human review. [doc § 10]
-14. Every change in the changes table maps to at least one diagnosis row. [E5, doc § 11]
+14. Every change in the changes table maps to at least one failure row, or is labelled `hygiene (no failure targeted)`. [E5, doc § 11]
 15. Every emitted prompt file has an audit row with verdict `lean` and a header naming the diagnosis rows it serves. [R4a.4, E1, doc § 4a]
 16. The emitted artifacts include Claude Code subagent definitions, one per step, each with its manifest and budget as a header. [E3, E8, doc § 12]
 17. Q1, Q2, Q3, Q11, Q13 and Q25 do not appear in the questions log, because they were derivable from the request and the artifacts. [Q1, Q2, Q13, Q25]

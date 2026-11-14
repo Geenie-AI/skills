@@ -13,17 +13,17 @@ on:
   workflow_dispatch:
     inputs:
       host:
-        description: Host to run
-        default: all
+        description: Host to run (codex only when chosen here)
+        default: claude
         type: choice
-        options: [all, claude, codex]
+        options: [claude, codex, all]
       skill:
         description: Skill folder name (all for every skill)
         default: all
         type: string
       scenario:
         description: Scenario directory name or ID prefix (all for every scenario)
-        default: all
+        default: S08m
         type: string
   pull_request:
     paths:
@@ -74,7 +74,7 @@ jobs:
           # OIDC tokens are not issued to pull requests from forks.
           CAN_OIDC: ${{ github.event.pull_request.head.repo.fork != true }}
           HAS_OPENAI: ${{ secrets.OPENAI_API_KEY != '' }}
-          HOST: ${{ github.event.inputs.host || 'all' }}
+          HOST: ${{ github.event.inputs.host || 'claude' }}
         run: |
           run_claude=false; run_codex=false
           if [ "$CAN_OIDC" = "true" ] && { [ "$HOST" = "all" ] || [ "$HOST" = "claude" ]; }; then run_claude=true; fi

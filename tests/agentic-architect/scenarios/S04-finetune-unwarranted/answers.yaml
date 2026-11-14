@@ -7,7 +7,7 @@ budget:
   upfront_max: 8
   deferred_max: 4
 answers:
-  Q1: "Design: there is only a one-line reviewer prompt today, so treat it as new. The examples are in fixtures/artifacts/review-examples.md."
+  Q1: "Design: there is only a one-line reviewer prompt today, so treat it as new. The examples are in artifacts/review-examples.md."
   Q2: "Claude Code, Claude Sonnet for reviews."
   Q3: "Takes a pull request diff from the ledgerd repo and produces review comments that catch what a senior maintainer would catch."
   Q4: "Correct: the review names every convention violation the maintainer would name, with the fix. Incorrect: misses a convention, or flags something the conventions allow."

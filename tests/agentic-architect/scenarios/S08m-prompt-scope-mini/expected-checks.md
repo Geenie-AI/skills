@@ -1,0 +1,8 @@
+1. The document opens with an out-of-scope root cause banner stating that the drafting step inherits about 100k tokens and that the split and per-step retrieval are outside `prompt` scope. [SC3, doc § 0]
+2. The diagnosis table has a `context` row with lost-in-the-middle evidence, a `behavior` row for the ignored negation and missing abstain path at L3, and a missing-eval row at L5. [SC1, doc § 5]
+3. The rewritten drafting prompt places the task and output contract at the start and restates them at the end, names an abstain output for a statement with no supporting clause, and uses a quote-then-cite contract. [R4.1, R4.7, R5.4]
+4. The eval spec is a step-level eval for the drafting step alone, with at least 20 items, or with seed items plus an explicit plan to reach 20 from the source named in Q5. [SC7, doc § 9]
+5. Out-of-scope findings lists the lost-in-the-middle row and the schema row with the recommended widening to `system` or `agent` scope and the accuracy forgone. [SC2, doc § 15]
+6. The artifact listing contains only the prompt file and eval files; no agent, retrieval, orchestration or tool artifact is emitted. [E7, doc § 12]
+7. Every row in the changes table maps to at least one of the three failure rows, or is labelled `hygiene (no failure targeted)`. [E5, doc § 11]
+8. The questions log contains none of Q15, Q17, Q18, Q20, Q23 or Q24, no Block H question other than Q21 and deferred Q22 items, and at most three questions asked up front, each with a reason it could not be derived. [Q15, Q19, Q21]
