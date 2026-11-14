@@ -1,0 +1,72 @@
+
+name: AI Skills Security Scan
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: skills-security-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  security:
+    name: NVIDIA SkillSpector
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install NVIDIA SkillSpector
+        run: |
+          uv tool install \
+            git+https://github.com/NVIDIA/skillspector.git
+
+      - name: Scan AI skills
+        id: scan
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          SKILLS_PATH="."
+
+          if [[ -f "$SKILLS_PATH/SKILL.md" ]]; then
+            skillspector scan "$SKILLS_PATH" \
+              --no-llm \
+              --format json \
+              --output skillspector-report.json \
+              --fail-on-findings \
+              --fail-on-incomplete \
+              --min-coverage 100
+          else
+            skillspector scan "$SKILLS_PATH" \
+              --recursive \
+              --max-skills 100 \
+              --no-llm \
+              --format json \
+              --output skillspector-report.json \
+              --fail-on-findings \
+              --fail-on-incomplete \
+              --min-coverage 100
+          fi
+
+      - name: Upload security report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: geenie-ai-security-report
+          path: skillspector-report.json
+          if-no-files-found: warn
+          retention-days: 90
