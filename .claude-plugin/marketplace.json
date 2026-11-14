@@ -2,7 +2,7 @@
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "geenie-ai-skills",
   "description": "Portable agent skills by Geenie-AI. Each skill is a plain Agent Skills folder that runs unchanged in Claude Code, Codex, Copilot, Gemini CLI, Cursor, Kiro and any other host that reads SKILL.md; this marketplace exposes each one as a Claude Code plugin.",
-  "version": "0.1.1",
+  "version": "0.1.0",
   "owner": {
     "name": "Geenie-AI",
     "url": "https://github.com/Geenie-AI"
@@ -19,7 +19,7 @@
         "./skills/agentic-architect"
       ],
       "displayName": "Agentic Architect",
-      "version": "0.1.1",
+      "version": "0.1.0,
       "description": "Designs a new agentic solution or diagnoses and improves an existing one (a prompt, a skill set, a skill-to-agent assignment, an agent, the knowledge layer, or a whole system) for Claude Code, Claude Agent SDK, Claude API, OpenAI Agents SDK, OpenAI Responses API, Codex, or a generic framework, following OpenAI's Optimizing LLM Accuracy method. Use when asked to design, architect, review, optimize, or fix prompts, skills, agents, retrieval, or multi-agent pipelines, or when a pipeline hallucinates, ignores its schema, or needs an eval plan.",
       "author": {
         "name": "Geenie-AI"
