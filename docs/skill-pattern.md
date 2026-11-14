@@ -86,7 +86,6 @@ tests/<name>/
 | `eval.primary_document` | The file in that folder the judge reads in full |
 | `eval.question_id_pattern` | Regex for question IDs in `questions.log` and `answers.yaml` |
 | `eval.baseline.scenario`, `eval.baseline.for` | Scenario whose output others (by name prefix) are diffed against |
-| `eval.release_scenario` | The blocking scenario the release workflow runs |
 | `eval.variants` | Extra answer files that rerun a scenario under another label |
 
 See [`testing.md`](testing.md) for how a scenario is run and graded.
@@ -126,4 +125,4 @@ warns when they are stale.
 4. Write at least three scenarios with checks that cite rule IDs and document sections.
 5. `python3 scripts/validate.py --skill <name>` is green.
 6. `scripts/run-scenario.sh --skill <name> --host claude --scenario S01` passes on at least one host.
-7. Fill `skills/<name>/README.md`, set `eval.release_scenario`, and add the skill under `## [Unreleased]` in `CHANGELOG.md`; the next `vX.Y.Z` tag ships it.
+7. Fill `skills/<name>/README.md` and add the skill under `## [Unreleased]` in `CHANGELOG.md`; the next `vX.Y.Z` tag ships it.

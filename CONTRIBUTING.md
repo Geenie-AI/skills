@@ -44,7 +44,7 @@ creates `skills/<name>/`, `tests/<name>/` and `planning/<name>/` from
 2. Write `SKILL.md` (numbered steps, each ending in "Done when") and the reference files; keep `SKILL.md` under 150 lines.
 3. Write at least three scenarios whose checks cite rule IDs and document sections.
 4. Run `python3 scripts/validate.py --skill <name>` until it is green, then `scripts/run-scenario.sh --skill <name> --host claude --scenario S01`.
-5. Fill `skills/<name>/README.md`, set `eval.release_scenario` in `tests/<name>/config.yaml`, and add the skill under `## [Unreleased]` in `CHANGELOG.md`; the next release tag ships it ([`docs/releasing.md`](docs/releasing.md)).
+5. Fill `skills/<name>/README.md` and add the skill under `## [Unreleased]` in `CHANGELOG.md`; the next release tag ships it ([`docs/releasing.md`](docs/releasing.md)).
 
 ## Running a scenario against a model
 

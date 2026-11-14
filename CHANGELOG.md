@@ -37,6 +37,15 @@ model-facing file of any skill (checked by `scripts/validate.py --changed-files`
 - CI authenticates to the Claude API with GitHub's OIDC token through
   Anthropic Workload Identity Federation (`.github/actions/anthropic-oidc`);
   no Anthropic API key is stored in the repository.
+- Release history: the `release` workflow records each tag's scenario
+  results in `RELEASES.md` (linked from the README) and appends them to the
+  GitHub release body (`scripts/release-history.py`). Release scenarios are
+  chosen per run (host, skill, scenario; default `claude`, `all`, `S08m`)
+  instead of each skill's `eval.release_scenario`, which is removed.
+  Failing release scenarios no longer stop the release: it is published
+  marked as failing, with each failed check and the judge's reason, a
+  `scenario-results-<tag>.zip` asset and links to the workflow artifact
+  and run; the run still ends red.
 
 ### agentic-architect
 

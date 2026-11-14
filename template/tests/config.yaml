@@ -13,5 +13,4 @@ eval:
   baseline:
     scenario: ""
     for: []
-  release_scenario: S01-first-request
   variants: []

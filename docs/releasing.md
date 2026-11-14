@@ -9,7 +9,7 @@ version.
 
 1. In `CHANGELOG.md`, move the `## [Unreleased]` entries into a new `## [X.Y.Z] - YYYY-MM-DD` section (entries are grouped by skill and by the shared tooling) and update the comparison links at the bottom.
 2. Set `version` to `X.Y.Z` in `.claude-plugin/marketplace.json` and run `python3 scripts/skillrepo.py sync` so every plugin entry carries it. The validator fails when they disagree.
-3. Make sure every skill's `eval.release_scenario` in `tests/<name>/config.yaml` names the scenario that must pass (a skill without one is skipped with a warning).
+3. Decide which scenarios gate the release. A tag push runs `S08m` on Claude Code for every skill (a skill without a matching scenario is skipped with a warning). For another selection, push the tag and cancel its run, then start `release` from the Actions tab with the tag as the ref and pick the host (`claude`, `codex`, `all`), skill (`all` or a folder name) and scenario (`all`, a directory name or an ID prefix).
 4. Merge to `main`, then tag and push:
 
    ```bash
@@ -19,10 +19,26 @@ version.
 
 `release.yml` then validates every skill, checks that the catalogue is in
 sync and that the manifest version equals the tag, extracts the changelog
-section, runs each skill's release scenario on Claude Code (blocking), zips
-each `skills/<name>` without
-its README, and publishes a GitHub release titled `Geenie-AI skills vX.Y.Z`
-with the zips attached.
+section, runs the selected scenarios, zips each `skills/<name>`
+without its README, and publishes a GitHub release titled
+`Geenie-AI skills vX.Y.Z` with the zips attached. The release body is the
+changelog section followed by a scenario results table, the reasons for any
+failure, and links to `scenario-results-vX.Y.Z.zip` (attached to the release,
+permanent: each scenario's `results.json`, `summary.md`, judge output and run
+log), the workflow artifact (expires with its retention) and the workflow run.
+The same summary is
+recorded under the tag in [`RELEASES.md`](../RELEASES.md), committed to
+`main` by the workflow (re-running a tag replaces its entry). If branch
+protection blocks `github-actions[bot]` from pushing to `main`, that step
+fails after the release is already published.
+
+A failing scenario does not stop the release. It is published with
+`(scenarios failing)` in its title, a warning at the top of the scenario
+section, and each failed check quoted from the scenario's
+`expected-checks.md` with the judge's reason; its `RELEASES.md` heading
+carries `— N failing`. The workflow run still ends red so the failure is
+noticed. Fix forward with a patch release; re-running the workflow on the same
+tag fails at `gh release create` until the existing release is deleted.
 
 Users of the Claude Code marketplace receive the new version when the entry
 versions change; `claude plugin update` fetches it.

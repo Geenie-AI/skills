@@ -7,7 +7,7 @@ Acceptance scenarios for the `agentic-architect` skill, taken from `planning/age
 ```
 tests/agentic-architect/
   README.md
-  config.yaml                      # output folder, primary document, question-ID pattern, baseline, release scenario
+  config.yaml                      # output folder, primary document, question-ID pattern, baseline
   preamble.md                      # non-interactive instructions the runner puts in front of input.md
   judge-prompt.md                  # LLM judge; placeholders are substituted by the runner
   scenarios/<ID>-<slug>/

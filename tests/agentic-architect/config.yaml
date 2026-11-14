@@ -15,7 +15,6 @@ eval:
   baseline:
     scenario: S02-hr-helpdesk           # S05 and S07* are graded by diffing against this run
     for: [S05-, S07]
-  release_scenario: S02-hr-helpdesk     # blocking gate in the release workflow
   variants:
     - scenario: S05-target-switch       # rerun with another answers file
       answers: answers-generic.yaml

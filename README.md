@@ -15,6 +15,13 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="license: MIT"></a>
 </p>
 
+<p align="center">
+  <a href="RELEASES.md"><b>Release history</b></a> ·
+  <a href="CHANGELOG.md">Changelog</a> ·
+  <a href="CONTRIBUTING.md">Contributing</a> ·
+  <a href="LICENSE">License</a>
+</p>
+
 Portable agent skills, built and tested the same way. Each skill is a plain
 folder in the open [Agent Skills](https://agentskills.io) format, so it runs
 unchanged in Claude Code, OpenAI Codex, GitHub Copilot, Gemini CLI, Cursor,
@@ -68,7 +75,7 @@ The full contract is in [`docs/skill-pattern.md`](docs/skill-pattern.md). In sho
 - **Written for agents.** `SKILL.md` is numbered steps with a "Done when" line each, a short vocabulary of leading words, and capability verbs instead of host tool names. Rules live in reference files loaded on demand, each with an ID that the steps, the scenarios and the validator share.
 - **Host-neutral by rule.** The portability rules H1–H8 in [`adapters/README.md`](adapters/README.md) are enforced by the validator where they can be, so one source folder runs everywhere; per-host details are generated from the skill's own description.
 - **Tested two ways.** `scripts/validate.py` checks structure without a model on every push. `scripts/run-scenario.sh` runs a scenario through a real host headlessly and has the host's model grade the result against expected checks; the eval workflow does that weekly and on pull requests.
-- **Released together.** The repository has one version and one changelog grouped by skill; tagging `vX.Y.Z` validates every skill, runs each one's release scenario, and publishes a zip per skill. The Claude Code marketplace at the repository root lists every skill as a plugin, with entries generated from the same descriptions as the catalogue.
+- **Released together.** The repository has one version and one changelog grouped by skill; tagging `vX.Y.Z` validates every skill, runs the selected release scenarios, and publishes a zip per skill; [`RELEASES.md`](RELEASES.md) records each tag's scenario results. The Claude Code marketplace at the repository root lists every skill as a plugin, with entries generated from the same descriptions as the catalogue.
 
 ## Repository layout
 
@@ -78,7 +85,7 @@ tests/<name>/           config.yaml, preamble.md, judge-prompt.md, scenarios/
 planning/<name>/        design documents
 adapters/               host overlays, portability rules, verified host facts, SDK loader samples
 scripts/                install.sh, validate.py, run-scenario.sh, grade-scenario.py, eval-report.py,
-                        changelog-section.py, new-skill.sh, skillrepo.py (shared helpers)
+                        changelog-section.py, release-history.py, new-skill.sh, skillrepo.py (shared helpers)
 template/               scaffold for a new skill
 docs/                   skill-pattern.md, testing.md, releasing.md
 .claude-plugin/         marketplace.json (one plugin entry per skill)

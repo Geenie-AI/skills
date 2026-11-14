@@ -60,8 +60,9 @@ stored; it is skipped on pull requests from forks. Codex is skipped when the
 table as a pull-request comment or, on scheduled and manual runs, refreshes
 the "Scenario eval results" block in each skill's README and commits it.
 
-Evals are non-blocking except for the release scenario in the release
-workflow.
+Evals never block. The scenarios selected for a release (`S08m` on Claude
+Code by default) run in the release workflow, and failures are published
+with the release and turn the run red; see `docs/releasing.md`.
 
 ## Writing a scenario
 

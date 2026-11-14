@@ -63,8 +63,6 @@ DEFAULT_CONFIG: dict = {
         # Scenario whose output other scenarios are diffed against, and the
         # scenario-name prefixes that need the diff.
         "baseline": {"scenario": "", "for": []},
-        # Scenario the release workflow runs as a blocking gate.
-        "release_scenario": "",
         # Extra answer files that rerun a scenario under another label.
         "variants": [],
     },
