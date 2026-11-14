@@ -306,9 +306,14 @@ case "$HOST" in
   claude)
     # --bare skips skill/hook discovery (good for a plain judge call) but reads
     # only ANTHROPIC_API_KEY, not a login or Workload Identity Federation, so it
-    # is used only when that key is set.
+    # is used only when that key is set. Without --bare the judge would have
+    # tools, skills and MCP servers, and with --max-turns 1 any tool call ends
+    # the run with error_max_turns and no JSON; --tools "" etc. prevent that.
     (cd "$OUT" && claude -p "$(cat "$JUDGE_PROMPT")" \
         ${ANTHROPIC_API_KEY:+--bare} \
+        --tools "" \
+        --disable-slash-commands \
+        --strict-mcp-config \
         --output-format json \
         --permission-mode dontAsk \
         --max-turns 1 \
