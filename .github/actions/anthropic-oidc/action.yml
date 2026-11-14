@@ -71,11 +71,21 @@ runs:
         WRKSPC: ${{ inputs.workspace_id }}
       run: |
         set -euo pipefail
+        # Composite actions don't enforce `required`, so an unset repository
+        # variable arrives as an empty string; fail with a clear message.
+        missing=""
+        [ -n "$RULE" ] || missing="$missing ANTHROPIC_FEDERATION_RULE_ID"
+        [ -n "$ORG" ] || missing="$missing ANTHROPIC_ORGANIZATION_ID"
+        [ -n "$SVAC" ] || missing="$missing ANTHROPIC_SERVICE_ACCOUNT_ID"
+        if [ -n "$missing" ]; then
+          echo "::error::Set the repository variables:$missing"
+          exit 1
+        fi
         {
           echo "ANTHROPIC_FEDERATION_RULE_ID=$RULE"
           echo "ANTHROPIC_ORGANIZATION_ID=$ORG"
           echo "ANTHROPIC_SERVICE_ACCOUNT_ID=$SVAC"
-          [ -n "$WRKSPC" ] && echo "ANTHROPIC_WORKSPACE_ID=$WRKSPC"
+          if [ -n "$WRKSPC" ]; then echo "ANTHROPIC_WORKSPACE_ID=$WRKSPC"; fi
         } >> "$GITHUB_ENV"
         # A leftover key would silently override federation (SDK precedence).
         [ -z "${ANTHROPIC_API_KEY:-}" ] || echo "::warning::ANTHROPIC_API_KEY is set on this job and will take precedence over federation; remove it"
