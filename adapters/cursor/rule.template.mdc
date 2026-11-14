@@ -1,0 +1,8 @@
+---
+description: {{DESCRIPTION}}
+alwaysApply: false
+---
+
+For this kind of request, read `.cursor/skills/{{SKILL}}/SKILL.md` and follow
+its steps in order. Load the reference files it points to only when the step
+says so. Write the output where the skill says.

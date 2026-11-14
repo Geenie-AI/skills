@@ -1,0 +1,20 @@
+scenario: S07b
+expected:
+  mode: optimize
+  scope: system
+  target: openai-agents-sdk
+budget:
+  upfront_max: 5
+  deferred_max: 3
+answers:
+  Q1: "Optimize; the agents are in fixtures/artifacts/helpdesk_agents.py and the trace export in fixtures/artifacts/helpdesk-trace-export.jsonl."
+  Q11: "Confirm the three proposed rows from the trace export: t-8841 (carry-over misread), t-8902 (claimed to change bank details), t-8977 (invented relocation allowance)."
+  Q12: "t-8841 yes; t-8902 yes; t-8977 no (no page exists)."
+  Q13: "All in the policy_answer agent; context about 6k tokens (instructions plus five retrieved chunks). t-8902 went wrong at triage, which handed a payroll matter to policy_answer."
+  Q14: "Nothing yet beyond the pilot itself."
+  Q18: "keep"
+  Q22: "confirm"
+  Q25: "System."
+  Q26: "Nothing else."
+expect_asked: [Q11, Q12, Q13, Q14, Q18]
+expect_not_asked: [Q1, Q2, Q3, Q4, Q5, Q6, Q7, Q8, Q9, Q10, Q15, Q16, Q17, Q19, Q20, Q21, Q23, Q24]

@@ -1,0 +1,1 @@
+Can you review this prompt? It works but feels like too much. It is the system prompt for our support reply writer on the Claude API (Messages API, Claude Sonnet): `fixtures/artifacts/support-reply-prompt.md`. No failures to report; we have an eval of 40 items in `fixtures/eval/` and the current prompt passes at 93%.

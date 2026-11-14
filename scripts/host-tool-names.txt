@@ -1,0 +1,44 @@
+# Host tool names that must not appear in the shared skill (rule H1).
+# scripts/validate.py reads this file.
+#
+# [exact]            flagged anywhere in skills/** when they appear as a whole word
+# [backtick-or-tool] flagged only inside backticks (`Read`) or when followed by
+#                    the word "tool" (Read tool), because the bare words are
+#                    ordinary English the skill body legitimately uses
+#
+# Lines starting with # are comments. Blank lines are ignored.
+
+[exact]
+# Claude Code
+AskUserQuestion
+TodoWrite
+WebFetch
+WebSearch
+NotebookEdit
+MultiEdit
+ToolSearch
+EnterPlanMode
+ExitPlanMode
+# OpenAI Codex
+apply_patch
+shell_command
+update_plan
+# Anthropic computer-use / text-editor tool family
+str_replace_editor
+str_replace_based_edit_tool
+# Cursor
+codebase_search
+edit_file
+run_terminal_cmd
+
+[backtick-or-tool]
+Read
+Write
+Edit
+Bash
+Glob
+Grep
+Agent
+Task
+Skill
+Monitor

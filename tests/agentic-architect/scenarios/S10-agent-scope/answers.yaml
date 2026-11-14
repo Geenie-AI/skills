@@ -1,0 +1,36 @@
+scenario: S10
+expected:
+  mode: optimize
+  scope: agent
+  target: openai-agents-sdk
+budget:
+  upfront_max: 5
+  deferred_max: 3
+answers:
+  Q1: "Optimize; artifacts in fixtures/artifacts/pipeline.py and researcher-failures.md."
+  Q2: "OpenAI Agents SDK, Python, gpt-5."
+  Q3: "The researcher takes one market question and returns sourced findings for the drafter."
+  Q4: "Correct: every finding has a claim, a source, a date and a label, and the source supports the claim. Incorrect: a claim without a source, a source that does not support it, or output that is not the findings list."
+  Q5: "About 12 good findings lists exist from before the pipeline; we could write 25 in a week."
+  Q6: "The notes repository (1,200 internal Markdown notes, growing weekly) and the public web."
+  Q7: "Notes: about 1,200 files, a few added every week; findings must cite the note path or URL."
+  Q8: "Notes are Markdown in a git repo; analysts find them by grep. For a sample question an analyst can usually name the note."
+  Q9: "Same every time: the findings list shape (claim, source, date, label), label vocabulary established/contested/unknown."
+  Q10: "An analyst checks the notes repo first, then searches approved web sources, records each fact with its source, labels how well established it is, and hands the list to the writer."
+  Q11: "See fixtures/artifacts/researcher-failures.md."
+  Q12: "F1 no (it did not fetch a source); F2 yes; F3 yes (the note existed); F4 yes (the column was there, it was misread); F5 yes."
+  Q13: "All inside the researcher step; under 8k tokens of context."
+  Q14: "Added 'do not make things up' and 'be thorough'. No change."
+  Q15: "About 40 requests a day; researcher step may take up to 90 seconds; cost under $0.30 per research step."
+  Q16: "Read the notes repo; web search; nothing is written anywhere. No irreversible actions."
+  Q17: "Agents SDK tracing is on."
+  Q18: "A sourced, correct brief is worth about $200 of analyst time; an unsupported claim reaching a client costs about $2,000 in credibility; a rework loop costs $50."
+  Q19: "The reviewer agent and then a human analyst check every brief; wrong claims are usually caught but have slipped through twice."
+  Q20: "Notes are confidential; they may be indexed in our own vector store but not used for training."
+  Q21: "Orchestrator, triage, drafter, reviewer and the handoff graph are fixed."
+  Q22: "a:yes b:no c:yes d:yes e:yes f:no g:yes h:no i:ask j:yes"
+  Q23: "One engineer, a few hours a week; weekly reindex of the notes is fine."
+  Q24: "Simplest that meets break-even."
+  Q25: "agent: the researcher only."
+  Q26: "The rest of the pipeline is in fixtures/artifacts/pipeline.py as given."
+expect_not_asked: [Q1, Q2, Q11, Q25]

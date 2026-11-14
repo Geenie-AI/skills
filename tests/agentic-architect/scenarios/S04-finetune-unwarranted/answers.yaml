@@ -1,0 +1,33 @@
+scenario: S04
+expected:
+  mode: design
+  scope: system
+  target: claude-code
+budget:
+  upfront_max: 8
+  deferred_max: 4
+answers:
+  Q1: "Design: there is only a one-line reviewer prompt today, so treat it as new. The examples are in fixtures/artifacts/review-examples.md."
+  Q2: "Claude Code, Claude Sonnet for reviews."
+  Q3: "Takes a pull request diff from the ledgerd repo and produces review comments that catch what a senior maintainer would catch."
+  Q4: "Correct: the review names every convention violation the maintainer would name, with the fix. Incorrect: misses a convention, or flags something the conventions allow."
+  Q5: "8 today. Maybe 25 in a week if two maintainers write them up."
+  Q6: "Yes: our repository conventions (CONTRIBUTING.md) and the code itself. Nothing public would know them."
+  Q7: "CONTRIBUTING.md is about two pages and changes a few times a year. No citation requirement, but pointing at the section helps."
+  Q8: "It is in the repo root. Yes, for every example we can say which CONTRIBUTING section applies."
+  Q9: "Same every time: one comment per finding, quoting the convention and giving the fix; a summary line that says approve or request changes."
+  Q10: "A maintainer reads the diff, recalls the conventions, checks each hunk against them, looks at related files when needed, and writes one comment per violation with the fix."
+  Q11: "n/a, design mode. The eight examples show the misses."
+  Q15: "About 30 PRs a day. No latency ceiling. Cost should stay under $0.50 per review."
+  Q16: "Read the repo and the diff. Post review comments on GitHub (reversible, can be deleted). No merges, no pushes."
+  Q17: "GitHub keeps every review comment; yes."
+  Q18: "A caught convention violation saves about 15 minutes of maintainer time, roughly $20. A missed one costs about the same later plus a noisy history, say $30. A false positive costs $5 of a developer's time."
+  Q19: "A maintainer still reviews every PR; the agent's comments are advisory."
+  Q20: "The code is private. We would rather not train a vendor model on it."
+  Q21: "Nothing fixed."
+  Q22: "a:yes b:yes c:yes d:yes e:yes f:no g:yes h:yes i:ask j:yes"
+  Q23: "One maintainer at an hour a week."
+  Q24: "Simplest that meets break-even."
+  Q25: "System."
+  Q26: "The repo in the working directory."
+expect_not_asked: [Q1, Q2, Q25]

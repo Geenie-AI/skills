@@ -1,0 +1,17 @@
+scenario: S12
+expected:
+  mode: optimize
+  scope: prompt
+  target: claude-api
+budget:
+  upfront_max: 1
+  deferred_max: 1
+answers:
+  Q1: "Optimize, as a review; no failures."
+  Q2: "Claude API, Claude Sonnet."
+  Q11: "None; this is a review. The eval passes at 93%."
+  Q21: "The JSON output schema is fixed; the help desk parser depends on it."
+  Q22: "a:yes b:ask c:ask d:ask e:ask f:no g:yes h:no i:no j:no"
+  Q25: "prompt (confirm)."
+  Q26: "Nothing else; it is one call."
+expect_not_asked: [Q1, Q2, Q3, Q4, Q5, Q6, Q7, Q8, Q9, Q10, Q11, Q12, Q13, Q14, Q15, Q16, Q17, Q18, Q19, Q20, Q23, Q24]

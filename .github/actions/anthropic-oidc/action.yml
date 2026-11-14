@@ -1,0 +1,107 @@
+name: Anthropic workload identity
+description: >-
+  Authenticate the job to the Claude API with GitHub's OIDC token instead of an
+  API key. Writes the identity token to a file, keeps it fresh in the background
+  (GitHub tokens expire after ~5 minutes and are single-use), exports the
+  federation variables Claude Code and the Anthropic SDKs read, and verifies
+  one exchange so a misconfigured rule fails the job early.
+  Requires `permissions: id-token: write` on the job.
+  Docs: https://platform.claude.com/docs/en/manage-claude/wif-providers/github-actions
+        https://code.claude.com/docs/en/authentication#anthropic-profiles-and-federation-credentials
+
+inputs:
+  federation_rule_id:
+    description: Federation rule (fdrl_...) that matches this repository's workflow runs
+    required: true
+  organization_id:
+    description: Anthropic organization ID
+    required: true
+  service_account_id:
+    description: Service account (svac_...) the rule maps to
+    required: true
+  workspace_id:
+    description: Workspace (wrkspc_...); required when the rule covers more than one workspace
+    required: false
+    default: ""
+  audience:
+    description: OIDC audience the federation rule expects
+    required: false
+    default: https://api.anthropic.com
+  refresh_seconds:
+    description: How often to fetch a fresh identity token into the file
+    required: false
+    default: "120"
+
+runs:
+  using: composite
+  steps:
+    - name: Fetch the GitHub OIDC token and keep it fresh
+      shell: bash
+      env:
+        AUDIENCE: ${{ inputs.audience }}
+        REFRESH: ${{ inputs.refresh_seconds }}
+      run: |
+        set -euo pipefail
+        [ -n "${ACTIONS_ID_TOKEN_REQUEST_URL:-}" ] || { echo "::error::no OIDC token endpoint; add 'permissions: id-token: write' to the job"; exit 1; }
+        TOKEN_FILE="$RUNNER_TEMP/anthropic-identity-token"
+        fetch() {
+          curl -sS -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=$AUDIENCE" | jq -r .value > "$1.tmp"
+          [ -s "$1.tmp" ] && [ "$(cat "$1.tmp")" != "null" ] || { echo "::error::empty OIDC token"; return 1; }
+          mv "$1.tmp" "$1"
+        }
+        fetch "$TOKEN_FILE"
+        # Background refresher: each exchange must present a token not used
+        # before, and Claude Code / the SDK reread the file on every refresh.
+        export TOKEN_FILE AUDIENCE REFRESH
+        nohup bash -c 'while sleep "$REFRESH"; do
+            curl -sS -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+              "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=$AUDIENCE" | jq -r .value > "$TOKEN_FILE.tmp" \
+              && mv "$TOKEN_FILE.tmp" "$TOKEN_FILE"
+          done' > "$RUNNER_TEMP/anthropic-identity-token.log" 2>&1 &
+        disown
+        echo "ANTHROPIC_IDENTITY_TOKEN_FILE=$TOKEN_FILE" >> "$GITHUB_ENV"
+
+    - name: Export federation variables
+      shell: bash
+      env:
+        RULE: ${{ inputs.federation_rule_id }}
+        ORG: ${{ inputs.organization_id }}
+        SVAC: ${{ inputs.service_account_id }}
+        WRKSPC: ${{ inputs.workspace_id }}
+      run: |
+        set -euo pipefail
+        {
+          echo "ANTHROPIC_FEDERATION_RULE_ID=$RULE"
+          echo "ANTHROPIC_ORGANIZATION_ID=$ORG"
+          echo "ANTHROPIC_SERVICE_ACCOUNT_ID=$SVAC"
+          [ -n "$WRKSPC" ] && echo "ANTHROPIC_WORKSPACE_ID=$WRKSPC"
+        } >> "$GITHUB_ENV"
+        # A leftover key would silently override federation (SDK precedence).
+        [ -z "${ANTHROPIC_API_KEY:-}" ] || echo "::warning::ANTHROPIC_API_KEY is set on this job and will take precedence over federation; remove it"
+
+    - name: Verify one token exchange
+      shell: bash
+      env:
+        AUDIENCE: ${{ inputs.audience }}
+        RULE: ${{ inputs.federation_rule_id }}
+        ORG: ${{ inputs.organization_id }}
+        SVAC: ${{ inputs.service_account_id }}
+        WRKSPC: ${{ inputs.workspace_id }}
+      run: |
+        set -euo pipefail
+        # Use a separate, fresh identity token: tokens are single-use, and the
+        # one in the file is reserved for Claude Code's own exchange.
+        JWT="$(curl -sS -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+          "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=$AUDIENCE" | jq -r .value)"
+        BODY="$(jq -n --arg jwt "$JWT" --arg rule "$RULE" --arg org "$ORG" --arg svac "$SVAC" --arg ws "$WRKSPC" '
+          {grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer", assertion: $jwt,
+           federation_rule_id: $rule, organization_id: $org, service_account_id: $svac}
+          + (if $ws != "" then {workspace_id: $ws} else {} end)')"
+        RESP="$(curl -sS https://api.anthropic.com/v1/oauth/token -H "content-type: application/json" --data "$BODY")"
+        if ! echo "$RESP" | jq -e '.access_token' >/dev/null 2>&1; then
+          echo "::error::token exchange failed; check the federation rule's match conditions against this run's sub claim (see the authentication history in the Claude Console)"
+          echo "$RESP" | jq 'with_entries(if (.key | test("token$")) then .value = "<redacted>" else . end)' || echo "$RESP"
+          exit 1
+        fi
+        echo "$RESP" | jq 'with_entries(if (.key | test("token$")) then .value = "<redacted>" else . end)'

@@ -1,0 +1,22 @@
+# Validation and eval settings for the agentic-architect skill.
+# Read by scripts/skillrepo.py; every key has a default (see DEFAULT_CONFIG there).
+skill: agentic-architect
+
+validate:
+  max_skill_lines: 150          # SKILL.md budget
+  max_reference_lines: 400      # every other model-facing .md in the skill folder
+  # "## N" headings in this file define the "doc § N" sections expected-checks.md may cite.
+  section_template: templates/architecture.md
+
+eval:
+  output_dir: agentic-architecture      # the skill writes here, relative to the project
+  primary_document: architecture.md     # read in full by the judge; other files are listed
+  question_id_pattern: 'Q\d{1,2}'       # IDs in questions.log and answers.yaml
+  baseline:
+    scenario: S02-hr-helpdesk           # S05 and S07* are graded by diffing against this run
+    for: [S05-, S07]
+  release_scenario: S02-hr-helpdesk     # blocking gate in the release workflow
+  variants:
+    - scenario: S05-target-switch       # rerun with another answers file
+      answers: answers-generic.yaml
+      suffix: generic

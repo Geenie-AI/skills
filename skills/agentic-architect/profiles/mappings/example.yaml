@@ -1,0 +1,23 @@
+# Example mapping: a CRM account record answers knowledge and envelope questions.
+# Copy to <source>.yaml and edit; the tool must exist in the host before the skill calls it.
+source: crm
+tool: mcp__crm__get_account
+lookup:
+  argument: account_id
+fields:
+  Q6:
+    field: kb_summary
+    transform: "list each knowledge source the account's helpdesk answers from"
+  Q7:
+    field: kb_stats
+    transform: "page count, change frequency, whether answers must cite the page"
+  Q8:
+    field: kb_location
+    transform: "where the pages live and how staff search them"
+  Q15:
+    field: ticket_volume
+    transform: "tickets per day; latency and cost ceilings if present"
+  Q16:
+    field: integrations
+    transform: "systems the solution may read from or act on; mark irreversible actions"
+staleness_days: 30

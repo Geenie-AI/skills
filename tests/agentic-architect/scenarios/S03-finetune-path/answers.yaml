@@ -1,0 +1,36 @@
+scenario: S03
+expected:
+  mode: optimize
+  scope: system
+  target: openai-responses
+budget:
+  upfront_max: 6
+  deferred_max: 4
+answers:
+  Q1: "Optimize; the prompt and the log sample are in fixtures/artifacts/."
+  Q2: "OpenAI Responses API, gpt-5. We can use gpt-5-mini if it holds the style."
+  Q3: "Takes English product copy (title, short description, features, care) and produces the German version in Kessler house style."
+  Q4: "Correct: faithful content and every house-style rule followed, so the editor changes nothing. Incorrect: any style edit needed, or a factual change."
+  Q5: "600 corrected pairs exist today, in the exact input/output format. We could reach 800 in a month."
+  Q6: "No external knowledge; the glossary and style rules are in the prompt already."
+  Q7: "The glossary is about 40 terms, changes a few times a year."
+  Q8: "The style guide is a Confluence page; the glossary is a spreadsheet."
+  Q9: "The four labelled parts, the du form, title pattern, number formatting, glossary terms, no superlatives, imperative care instructions."
+  Q10: "An editor reads the English, writes the German in house style from memory of the guide, checks numbers and the glossary, and signs it off."
+  Q11: "See fixtures/artifacts/logged-outputs-sample.md; 600 corrected rows in the review tool, exportable as JSONL."
+  Q12: "Present: every rule the model broke is stated in the prompt."
+  Q13: "In the single call; the prompt is about 6k tokens and the input a few hundred."
+  Q14: "Rewrote the rules twice, added the five examples (helped, 70% to 50% corrections), tried gpt-5-mini (worse style)."
+  Q15: "About 400 items a day in batches. Latency ceiling 4 seconds per item for the editor tool; cost ceiling $0.01 per item. We are at about 6 seconds and $0.018."
+  Q16: "Reads the input; writes the draft into the review tool (reversible). Nothing irreversible."
+  Q17: "Yes, every input, output and correction is logged with the editor's note."
+  Q18: "A clean output saves about 4 minutes of editor time, around EUR 3. A style miss costs about 2 minutes, EUR 1.50. A factual miss that reaches the website costs about EUR 80."
+  Q19: "An editor reviews every item before publishing."
+  Q20: "Product copy is public material; training on it is fine. No employee data involved."
+  Q21: "The four-part output format and the Responses API are fixed."
+  Q22: "a:yes b:ask c:yes d:yes e:yes f:no g:yes h:yes i:yes j:no"
+  Q23: "The content team lead can curate examples monthly; an engineer can run a training job quarterly."
+  Q24: "Most accurate within the cost ceiling."
+  Q25: "System."
+  Q26: "Nothing else."
+expect_not_asked: [Q1, Q2, Q3, Q11, Q25]

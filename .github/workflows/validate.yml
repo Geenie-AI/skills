@@ -1,0 +1,57 @@
+name: validate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  static:
+    name: Static validation (no model)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Shell and Python syntax
+        run: |
+          for f in scripts/*.sh; do bash -n "$f"; done
+          python3 -m py_compile scripts/*.py adapters/sdk/*.py
+
+      - name: Validate every skill (push)
+        if: github.event_name != 'pull_request'
+        run: python3 scripts/validate.py
+
+      - name: Validate every skill with CHANGELOG check (pull request)
+        if: github.event_name == 'pull_request'
+        run: |
+          git diff --name-only "origin/${{ github.base_ref }}...HEAD" > "$RUNNER_TEMP/changed.txt"
+          echo "Changed files:"; cat "$RUNNER_TEMP/changed.txt"
+          python3 scripts/validate.py --changed-files-from "$RUNNER_TEMP/changed.txt"
+
+      - name: Catalogue and marketplace are in sync with the skills on disk
+        # Informational on pull requests: the catalog workflow commits the sync on main.
+        continue-on-error: ${{ github.event_name == 'pull_request' }}
+        run: python3 scripts/skillrepo.py sync --check
+
+      - name: Scaffold check (the template still validates)
+        run: |
+          scripts/new-skill.sh ci-scaffold-check
+          python3 scripts/validate.py --skill ci-scaffold-check
+
+      - name: Marketplace validation (Claude Code)
+        # Non-blocking: the CLI is installed from npm and may lag the docs.
+        # verify: package name @anthropic-ai/claude-code (https://code.claude.com/docs/en/setup)
+        continue-on-error: true
+        run: |
+          git checkout -- . && git clean -fdq
+          npm install -g @anthropic-ai/claude-code
+          claude plugin validate . || true

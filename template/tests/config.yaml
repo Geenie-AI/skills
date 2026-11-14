@@ -1,0 +1,17 @@
+# Validation and eval settings for the {{SKILL}} skill (defaults in scripts/skillrepo.py).
+skill: {{SKILL}}
+
+validate:
+  max_skill_lines: 150
+  max_reference_lines: 400
+  section_template: templates/output.md
+
+eval:
+  output_dir: {{SKILL}}-output
+  primary_document: output.md
+  question_id_pattern: 'Q\d{1,2}'
+  baseline:
+    scenario: ""
+    for: []
+  release_scenario: S01-first-request
+  variants: []

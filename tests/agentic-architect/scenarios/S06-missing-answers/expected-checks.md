@@ -1,0 +1,8 @@
+1. The run completes and produces a full architecture document with every section present. [doc § 0]
+2. The assumptions section lists Q18 as unknown with the symmetric placeholder (+1 success, -1 failure) as the default taken. [Q18, doc § 2]
+3. The assumptions section lists Q19 as unknown with "a human reviews everything" as the default taken. [Q19, doc § 2]
+4. The business worksheet shows a 50% break-even and labels it a placeholder. [doc § 10]
+5. The good-enough section tells the user the placeholder figures are the first thing to replace. [doc § 10]
+6. The intake table marks Q18 and Q19 with provenance `default`. [doc § 1]
+7. The handoff policy still exists and uses the human-reviews-everything default. [doc § 10]
+8. Sections 5 to 9 are otherwise the same design as S02: three agents, retrieval on the answering agent only, a baseline before retrieval. [R9.2, doc § 7.1]

@@ -1,0 +1,30 @@
+scenario: S08
+expected:
+  mode: optimize
+  scope: prompt
+  target: claude-code
+budget:
+  upfront_max: 3
+  deferred_max: 2
+answers:
+  Q1: "Optimize; the drafting prompt is in fixtures/artifacts/drafting-prompt.md and the failures in artifacts/failures.md."
+  Q2: "Claude Code, Claude Sonnet."
+  Q3: "Takes the extracted facts, the classification and the listed clauses, and produces the reply text with clause ids in brackets."
+  Q4: "Correct: every statement is backed by a clause id that exists in the manual and says what the reply says; numbers match. Incorrect: an invented or misapplied clause id."
+  Q5: "0 today; 25 within a week from October tickets."
+  Q6: "The Northwind policy manual; it is pasted in upstream at step 3."
+  Q7: "About 400 clauses in 11 sections, changes monthly, answers must cite clause ids."
+  Q8: "Markdown in a git repo; advisers can name the clause for most sample questions."
+  Q9: "British English, greeting and closing wording, 80 to 220 words, clause ids in brackets after the sentence, no bullets, refusals on other employees and tax or legal advice."
+  Q10: "The adviser reads the clauses found in step 3, drafts the answer quoting the decisive number, and checks each clause id against the manual."
+  Q11: "See artifacts/failures.md."
+  Q12: "Present in all three cases; the right clause was in the pasted manual."
+  Q13: "All at step 4 with about 100k tokens in context; failure 3 also at step 5."
+  Q14: "Added do-not-hallucinate wording and more rules; no change."
+  Q16: "Reads the manual text in context; writes a draft into the ticketing tool (reversible). No irreversible actions."
+  Q19: "An HR adviser reviews every draft before sending."
+  Q21: "Steps 1, 2, 3 and 5 are fixed this sprint; only the drafting prompt may change."
+  Q22: "a:no b:no c:no d:ask e:ask f:ask g:yes h:no i:no j:no"
+  Q25: "prompt: the drafting prompt only."
+  Q26: "Steps 1, 2, 3 and 5 as described in the request; the manual at artifacts/policy-corpus.md."
+expect_not_asked: [Q1, Q2, Q11, Q13, Q15, Q17, Q18, Q20, Q23, Q24, Q25]

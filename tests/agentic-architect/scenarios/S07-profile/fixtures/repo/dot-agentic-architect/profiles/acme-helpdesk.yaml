@@ -1,0 +1,23 @@
+profile_id: acme-helpdesk
+updated: 2026-11-14
+staleness_days: 90
+answers:
+  Q2:  { value: "OpenAI Agents SDK, gpt-5 family; gpt-5-mini allowed for cheap steps", source: user, at: 2026-11-10 }
+  Q3:  { value: "Takes an employee's HR question in chat and produces an answer grounded in the policy pages, or a ticket to HR when it cannot answer", source: user, at: 2026-11-10 }
+  Q4:  { value: "Correct: states what the policy page says, cites the page, invents no conditions. Incorrect: unsupported answer, or an answer given when the pages are silent instead of a ticket", source: user, at: 2026-11-10 }
+  Q5:  { value: "30 today from past tickets; 50 within two weeks of the pilot", source: user, at: 2026-11-10 }
+  Q6:  { value: "HR policy pages (internal, ~400). Employee record out of scope for v1", source: external:confluence.space_summary, at: 2026-11-14 }
+  Q7:  { value: "About 400 pages, a paragraph to two pages each; quarterly batch updates; answers must link the page", source: external:confluence.space_summary, at: 2026-11-14 }
+  Q8:  { value: "Confluence; found by search; HR can name the page for a sample question", source: user, at: 2026-11-10 }
+  Q9:  { value: "Short answer first, then the policy basis with a page link, then next steps; always refuse payroll changes and say who to contact; friendly plain English", source: user, at: 2026-11-10 }
+  Q10: { value: "Adviser reads the question, decides policy vs personal record, searches Confluence, reads the paragraph, answers quoting it with a link; opens a Jira ticket if not covered or personal", source: user, at: 2026-11-10 }
+  Q15: { value: "About 2,000 questions a day; 10 s first answer; about $0.05 per question", source: user, at: 2026-11-10 }
+  Q16: { value: "Read Confluence policy pages; create Jira tickets; never write to payroll, no credentials for it", source: user, at: 2026-11-10 }
+  Q17: { value: "Not today; pilot can log everything", source: user, at: 2026-11-10 }
+  Q18: { value: "Correct self-service +$15; wrong answer accepted -$200; unnecessary ticket -$10; failures split 70% ticket / 30% wrong accepted", source: user, at: 2026-08-06 }
+  Q19: { value: "Human answers everything within a day today; with the agent a wrong answer is caught only on pushback or audit", source: user, at: 2026-11-10 }
+  Q20: { value: "Policy pages internal but not confidential; fine for the vendor; no training on employee records", source: user, at: 2026-11-10 }
+  Q21: { value: "Nothing fixed", source: user, at: 2026-11-10 }
+  Q22: { value: "a:yes b:yes c:yes d:yes e:yes f:yes g:yes h:ask i:no j:yes", source: user, at: 2026-11-10 }
+  Q23: { value: "One engineer a day a week for a quarter, then a few hours a month; quarterly reindex fine", source: user, at: 2026-11-10 }
+  Q24: { value: "Simplest that meets break-even", source: user, at: 2026-11-10 }

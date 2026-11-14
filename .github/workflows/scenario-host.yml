@@ -1,0 +1,135 @@
+name: scenario-host
+
+# Reusable: run a set of scenarios on one host. Called by eval.yml once per
+# host. Baselines run first (one job each), then the matrix of runs, which
+# downloads the baseline results so cross-run diffs can be graded.
+#
+# Claude Code authenticates with Workload Identity Federation (the job's
+# GitHub OIDC token, no API key); see .github/actions/anthropic-oidc. Codex
+# still needs the OPENAI_API_KEY secret.
+#
+# verify: Claude Code install (npm @anthropic-ai/claude-code) and Codex CLI
+# install (npm @openai/codex) package names against the vendors' docs:
+#   https://code.claude.com/docs/en/setup
+#   https://developers.openai.com/codex/cli
+
+on:
+  workflow_call:
+    inputs:
+      host:
+        description: claude or codex
+        required: true
+        type: string
+      install:
+        description: Shell command that installs the host CLI
+        required: true
+        type: string
+      runs:
+        description: JSON array of {skill, scenario, answers, label}
+        required: true
+        type: string
+      baselines:
+        description: JSON array of {skill, scenario, answers, label} to run first
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+  # verify: codex exec reads CODEX_API_KEY for a single run
+  # (https://developers.openai.com/codex/non-interactive-mode)
+  CODEX_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+  CI: "true"
+
+jobs:
+  baseline:
+    name: ${{ inputs.host }} / ${{ matrix.skill }} / ${{ matrix.label }} (baseline)
+    if: inputs.baselines != '[]'
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(inputs.baselines) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install host CLI
+        run: ${{ inputs.install }}
+      - name: Authenticate to the Claude API (OIDC)
+        if: inputs.host == 'claude'
+        uses: ./.github/actions/anthropic-oidc
+        with:
+          federation_rule_id: ${{ vars.ANTHROPIC_FEDERATION_RULE_ID || 'fdrl_01PrmDFQLci9MR5jJ4LBYErq' }}
+          organization_id: ${{ vars.ANTHROPIC_ORGANIZATION_ID || '76d14e63-d21e-4395-93a9-3e5acb6de83b' }}
+          service_account_id: ${{ vars.ANTHROPIC_SERVICE_ACCOUNT_ID || 'svac_01JWKCu1ZZ4kPtxMDVwjEBNP' }}
+          workspace_id: ${{ vars.ANTHROPIC_WORKSPACE_ID || 'wrkspc_01SpcAkLhYsuwRVbt3ymRuTy' }}
+      - name: Run baseline scenario
+        run: |
+          scripts/run-scenario.sh --skill "${{ matrix.skill }}" --host "${{ inputs.host }}" \
+            --scenario "${{ matrix.scenario }}" --answers "${{ matrix.answers }}" --label "${{ matrix.label }}" \
+            --out "eval-out/${{ matrix.skill }}/${{ matrix.label }}-${{ inputs.host }}"
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-${{ inputs.host }}-${{ matrix.skill }}-${{ matrix.label }}
+          path: eval-out/
+          if-no-files-found: ignore
+
+  run:
+    name: ${{ inputs.host }} / ${{ matrix.skill }} / ${{ matrix.label }}
+    needs: baseline
+    if: ${{ !cancelled() && inputs.runs != '[]' }}
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(inputs.runs) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install host CLI
+        run: ${{ inputs.install }}
+      - name: Authenticate to the Claude API (OIDC)
+        if: inputs.host == 'claude'
+        uses: ./.github/actions/anthropic-oidc
+        with:
+          federation_rule_id: ${{ vars.ANTHROPIC_FEDERATION_RULE_ID || 'fdrl_01PrmDFQLci9MR5jJ4LBYErq' }}
+          organization_id: ${{ vars.ANTHROPIC_ORGANIZATION_ID || '76d14e63-d21e-4395-93a9-3e5acb6de83b' }}
+          service_account_id: ${{ vars.ANTHROPIC_SERVICE_ACCOUNT_ID || 'svac_01JWKCu1ZZ4kPtxMDVwjEBNP' }}
+          workspace_id: ${{ vars.ANTHROPIC_WORKSPACE_ID || 'wrkspc_01SpcAkLhYsuwRVbt3ymRuTy' }}
+      - name: Fetch baseline results (for cross-run diffs)
+        if: inputs.baselines != '[]'
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          pattern: eval-${{ inputs.host }}-${{ matrix.skill }}-*
+          path: eval-out/
+          merge-multiple: true
+      - name: Run scenario
+        run: |
+          scripts/run-scenario.sh --skill "${{ matrix.skill }}" --host "${{ inputs.host }}" \
+            --scenario "${{ matrix.scenario }}" --answers "${{ matrix.answers }}" --label "${{ matrix.label }}" \
+            --out "eval-out/${{ matrix.skill }}/${{ matrix.label }}-${{ inputs.host }}"
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-${{ inputs.host }}-${{ matrix.skill }}-${{ matrix.label }}
+          path: eval-out/${{ matrix.skill }}/${{ matrix.label }}-${{ inputs.host }}/
+          if-no-files-found: ignore

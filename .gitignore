@@ -1,0 +1,27 @@
+# Scenario runner output
+.eval-results/
+eval-out/
+tests/**/project/
+tests/**/questions.log
+
+# Packaged releases
+dist/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Node (SDK adapter samples)
+node_modules/
+
+# Editors and OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Local host state (Claude Code session dirs, local settings); not part of the repo.
+# The marketplace manifest lives in .claude-plugin/, which is tracked.
+**/.claude/

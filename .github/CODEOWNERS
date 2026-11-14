@@ -1,0 +1,8 @@
+# Replace the logins below with the maintainers' GitHub accounts before the first release.
+# Each skill can list its own owners; the shared tooling has repository-wide owners.
+*                                   @Geenie-AI/skills-maintainers
+/skills/agentic-architect/          @Geenie-AI/skills-maintainers
+/tests/agentic-architect/           @Geenie-AI/skills-maintainers
+/scripts/                           @Geenie-AI/skills-maintainers
+/adapters/                          @Geenie-AI/skills-maintainers
+/.github/workflows/                 @Geenie-AI/skills-maintainers

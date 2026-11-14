@@ -1,0 +1,9 @@
+scenario: S01
+expected:
+  note: TODO free-form description of the expected outcome, for humans
+budget:
+  upfront_max: 3
+  deferred_max: 1
+answers:
+  Q1: "TODO the canned answer the runner feeds back when the skill asks Q1"
+expect_not_asked: []

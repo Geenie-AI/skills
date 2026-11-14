@@ -1,0 +1,17 @@
+scenario: S09
+expected:
+  mode: design
+  scope: skill-assignment
+  target: claude-code
+budget:
+  upfront_max: 2
+  deferred_max: 1
+answers:
+  Q1: "Design; no failures, this is housekeeping."
+  Q2: "Claude Code; the models are set per agent in the files."
+  Q3: "Four agents turn a research request into a reviewed client brief; the skills are the procedures they follow."
+  Q11: "None; no failures."
+  Q21: "Agents' responsibilities and the skill bodies are fixed; only who loads what and the skill descriptions may change."
+  Q25: "skill-assignment"
+  Q26: "Agents in .claude/agents/, skills in .claude/skills/; budget 8k tokens always-loaded per agent."
+expect_not_asked: [Q4, Q5, Q6, Q7, Q8, Q9, Q10, Q15, Q16, Q17, Q18, Q19, Q20, Q22, Q23, Q24]

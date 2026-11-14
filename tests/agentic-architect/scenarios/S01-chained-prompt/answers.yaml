@@ -1,0 +1,36 @@
+scenario: S01
+expected:
+  mode: optimize
+  scope: system
+  target: claude-code
+budget:
+  upfront_max: 6
+  deferred_max: 4
+answers:
+  Q1: "Optimize. The artifacts are in artifacts/pipeline-system-prompt.full.md and artifacts/failures.md."
+  Q2: "Claude Code. Claude Sonnet today; Opus is allowed if the analysis needs it."
+  Q3: "Takes an employee's HR question from the shared inbox and produces a policy-grounded reply as a JSON object with clause citations."
+  Q4: "Correct: every statement in the reply is backed by a clause id that exists in the manual and actually says what the reply says, the numbers match the clause, the JSON validates. Incorrect: a cited clause does not exist or does not support the statement, or the output is not the JSON object."
+  Q5: "0 ideal examples today. We could produce 25 within a week from the October tickets by having two HR advisers write the ideal reply with clause ids."
+  Q6: "Yes: the Northwind employee policy manual (private). Nothing else."
+  Q7: "About 400 pages, roughly 400 clauses across 11 sections. It changes monthly (regenerated on the first of the month). Answers must cite clause ids."
+  Q8: "It lives in a git repository as Markdown, one file per section; the pipeline pastes the concatenation. People Ops can say which clause answers a sample question for most questions, yes."
+  Q9: "Same every time: the JSON schema, British English, the greeting and closing wording, 80 to 220 words in the body, clause ids in brackets after the sentence they support, no bullets, refuse to discuss other employees or to give tax or legal advice."
+  Q10: "An HR adviser reads the email, works out what is being asked and which policy area it is, opens the manual to that section and finds the clause (sometimes two), drafts the reply quoting the number or deadline, checks the clause id is right, and pastes it into the ticketing tool in the standard format."
+  Q11: "See artifacts/failures.md: three failures with input, produced, expected."
+  Q12: "Failure 1: present (POL-7.3.2 was in the manual). Failure 2: present (POL-3.2.4 was in the manual). Failure 3: the clause was present; the format problem is n/a."
+  Q13: "All three first went wrong at task 4 (drafting). Context at that point was about 100k tokens: 9k prompt plus 90k manual plus task 1 to 3 outputs. Failure 3 also broke at task 5."
+  Q14: "Added 'do not hallucinate' and 'do not invent clause ids' at the top, added rules 24 to 29 and a quality checklist. No measurable change: 4 of 11 October replies still cite non-existent clauses."
+  Q15: "About 150 requests a day. Latency ceiling 60 seconds per reply (it is an inbox, not chat). No hard cost ceiling but we would like to stay under what we pay now, roughly 0.40 EUR per reply."
+  Q16: "Read the policy manual; read the ticket; write the reply back into the ticketing tool as a draft (reversible, a human sends it). No irreversible actions."
+  Q17: "Yes, every request and response is logged with the ticket id."
+  Q18: "A correct reply that goes out without edits is worth about EUR 12 of adviser time. A reply with an invented clause that an adviser catches costs about EUR 6 of rework; one that slips through to an employee costs about EUR 150 (correction, complaint, trust). We estimate 1 in 10 bad replies slips through."
+  Q19: "An HR adviser reads every draft before it is sent; they catch most problems within the hour. Replies can be corrected after sending but it is embarrassing."
+  Q20: "No constraints: the manual is internal but not sensitive; the vendor already sees it."
+  Q21: "Nothing is fixed."
+  Q22: "a:yes b:yes c:yes d:yes e:yes f:ask g:yes h:ask i:ask j:ask"
+  Q23: "One engineer at maybe a day a month. Re-indexing the manual monthly is fine if it is a script."
+  Q24: "Simplest that meets break-even."
+  Q25: "System: everything may change."
+  Q26: "Nothing else; there are no other layers."
+expect_not_asked: [Q1, Q2, Q3, Q11, Q13, Q25]

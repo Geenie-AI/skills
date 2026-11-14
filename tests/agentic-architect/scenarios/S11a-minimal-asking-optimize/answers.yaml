@@ -1,0 +1,24 @@
+scenario: S11a
+expected:
+  mode: optimize
+  scope: prompt
+  target: claude-code
+budget:
+  upfront_max: 3
+  deferred_max: 1
+answers:
+  Q1: "Optimize."
+  Q2: "Claude Code, Claude Sonnet."
+  Q4: "Correct means every clause id cited exists under policies/ and the sentence it supports matches the clause text and numbers. Wrong citation or wrong number is incorrect."
+  Q5: "None written down. We could write about 20 from last month's tickets within a week."
+  Q11: "See fixtures/artifacts/failures.md."
+  Q12: "Present in all three."
+  Q13: "At the drafting step, roughly 100k tokens in context."
+  Q14: "Nothing beyond adding do-not-hallucinate wording."
+  Q16: "The prompt reads the clauses in context; the pipeline writes a draft to the ticketing tool, which is reversible."
+  Q19: "An adviser reviews every draft."
+  Q21: "Only the drafting prompt changes."
+  Q22: "a:no b:no c:no d:yes e:yes f:ask g:yes h:no i:no j:no"
+  Q25: "prompt"
+  Q26: "The other four steps stay as they are; the manual is under policies/."
+expect_not_asked: [Q1, Q2, Q3, Q6, Q7, Q9, Q11, Q12, Q13, Q15, Q16, Q17, Q18, Q20, Q23, Q24, Q25]

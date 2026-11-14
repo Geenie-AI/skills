@@ -1,0 +1,33 @@
+scenario: S02
+expected:
+  mode: design
+  scope: system
+  target: openai-agents-sdk
+budget:
+  upfront_max: 8
+  deferred_max: 4
+answers:
+  Q1: "Design; nothing exists yet."
+  Q2: "OpenAI Agents SDK, gpt-5 family; use gpt-5-mini for cheap steps if you like."
+  Q3: "Takes an employee's HR question in chat and produces an answer grounded in the policy pages, or a ticket to HR when it cannot answer."
+  Q4: "Correct: the answer states what the policy page says, cites the page, and does not invent conditions. Incorrect: an answer the pages do not support, or an answer given when the pages are silent instead of a ticket."
+  Q5: "30 today from past tickets; we could get to 50 in two weeks from the pilot."
+  Q6: "The HR policy pages (internal). Also the employee's own record for eligibility, but we would rather not expose that in the first version."
+  Q7: "About 400 pages, roughly a paragraph to two pages each. They change quarterly, in a batch. Answers must point to the page they came from."
+  Q8: "They live in Confluence; employees find them by search. Yes, HR can say which page answers a sample question."
+  Q9: "Same every time: short answer first, then the policy basis with a link to the page, then what to do next. Always refuse any request to change payroll data and say who to contact. Friendly, plain English."
+  Q10: "An HR adviser reads the question, decides if it is a policy question or a personal-record question, searches Confluence for the page, reads the relevant paragraph, answers quoting it with a link, and if the page does not cover it or the case is personal they open a ticket in Jira for the right team."
+  Q11: "None yet; nothing exists."
+  Q15: "About 2,000 questions a day. Latency ceiling 10 seconds for a first answer in chat. Cost ceiling about $0.05 per question."
+  Q16: "Read: the policy pages (Confluence). Act: create a Jira ticket. Must never write to the payroll system; it does not even get credentials for it."
+  Q17: "Not today; the pilot can log everything."
+  Q18: "Correct self-service answer +$15. Wrong answer accepted by an employee -$200. Unnecessary ticket -$10. We would guess 70% of failures become tickets and 30% are wrong answers accepted."
+  Q19: "Today a human answers everything within a day. With the agent, a wrong answer is caught only if the employee pushes back or HR audits a sample; it can be corrected but the employee may have acted on it."
+  Q20: "Policy pages are internal but not confidential; fine to send to the vendor. No training on employee records."
+  Q21: "Nothing is fixed."
+  Q22: "a:yes b:yes c:yes d:yes e:yes f:yes g:yes h:ask i:no j:yes"
+  Q23: "One engineer at a day a week for the first quarter, then a few hours a month. Reindexing quarterly is fine."
+  Q24: "Simplest that meets break-even."
+  Q25: "System."
+  Q26: "Nothing else exists."
+expect_not_asked: [Q1, Q2, Q3, Q11, Q25]

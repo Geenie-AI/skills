@@ -1,0 +1,17 @@
+scenario: S07
+expected:
+  mode: design
+  scope: system
+  target: openai-agents-sdk
+budget:
+  upfront_max: 1
+  deferred_max: 3
+answers:
+  Q1: "Design."
+  Q18: "keep"
+  Q22: "confirm"
+  Q25: "System."
+  Q26: "Nothing else exists."
+  Q11: "n/a, design mode."
+expect_asked: [Q18]
+expect_not_asked: [Q1, Q2, Q3, Q4, Q5, Q6, Q7, Q8, Q9, Q10, Q15, Q16, Q17, Q19, Q20, Q21, Q23, Q24, Q25]

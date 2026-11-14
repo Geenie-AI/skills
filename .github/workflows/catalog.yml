@@ -1,0 +1,52 @@
+name: catalog
+
+# Keeps the skills catalogue in README.md and the plugin entries in
+# .claude-plugin/marketplace.json in line with the skills on disk: one row
+# and one entry per skills/<name>/SKILL.md, descriptions taken from the
+# frontmatter, every entry at the repository version. Runs when a SKILL.md or
+# the manifest changes on main, and on request; commits the result.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "skills/*/SKILL.md"
+      - ".claude-plugin/marketplace.json"
+      - "README.md"
+      - "scripts/skillrepo.py"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: catalog
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Sync catalogue and marketplace from SKILL.md files
+        run: python3 scripts/skillrepo.py sync
+
+      - name: Commit if anything changed
+        run: |
+          if git diff --quiet -- README.md .claude-plugin/marketplace.json; then
+            echo "catalogue up to date; nothing to commit"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add README.md .claude-plugin/marketplace.json
+          git commit -m "docs: sync skills catalogue and marketplace entries [skip ci]"
+          git pull --rebase origin main
+          git push origin HEAD:main

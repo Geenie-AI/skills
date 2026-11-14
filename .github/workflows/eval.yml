@@ -1,0 +1,175 @@
+name: eval
+
+# Scenario evals that call a model. Non-blocking: results are posted as a PR
+# comment, uploaded as artifacts, and (on scheduled and manual runs) written
+# into each skill's README. Claude Code authenticates with the job's GitHub
+# OIDC token (Workload Identity Federation, no API key); it is skipped on pull
+# requests from forks, which get no OIDC token. Codex is skipped when the
+# OPENAI_API_KEY secret is absent.
+
+on:
+  schedule:
+    - cron: "17 6 * * 1"   # weekly, Monday 06:17 UTC
+  workflow_dispatch:
+    inputs:
+      host:
+        description: Host to run
+        default: all
+        type: choice
+        options: [all, claude, codex]
+      skill:
+        description: Skill folder name (all for every skill)
+        default: all
+        type: string
+      scenario:
+        description: Scenario directory name or ID prefix (all for every scenario)
+        default: all
+        type: string
+  pull_request:
+    paths:
+      - "skills/**"
+      - "tests/**"
+      - "scripts/run-scenario.sh"
+      - "scripts/grade-scenario.py"
+      - "scripts/skillrepo.py"
+      - "scripts/install.sh"
+
+permissions:
+  contents: read
+  pull-requests: write
+  id-token: write
+
+jobs:
+  plan:
+    name: Pick skills, scenarios and hosts
+    runs-on: ubuntu-latest
+    outputs:
+      runs: ${{ steps.pick.outputs.runs }}
+      baselines: ${{ steps.pick.outputs.baselines }}
+      run_claude: ${{ steps.hosts.outputs.run_claude }}
+      run_codex: ${{ steps.hosts.outputs.run_codex }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Pick scenarios
+        id: pick
+        env:
+          SKILL: ${{ github.event.inputs.skill || 'all' }}
+          SCENARIO: ${{ github.event.inputs.scenario || 'all' }}
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            git diff --name-only "origin/${{ github.base_ref }}...HEAD" > "$RUNNER_TEMP/changed.txt"
+            PLAN="$(python3 scripts/skillrepo.py plan-eval --changed-from "$RUNNER_TEMP/changed.txt")"
+          else
+            PLAN="$(python3 scripts/skillrepo.py plan-eval --skill "$SKILL" --scenario "$SCENARIO")"
+          fi
+          echo "$PLAN" | python3 -c 'import json,sys; p=json.load(sys.stdin); print("runs=" + json.dumps(p["runs"])); print("baselines=" + json.dumps(p["baselines"]))' >> "$GITHUB_OUTPUT"
+          cat "$GITHUB_OUTPUT"
+
+      - name: Decide hosts
+        id: hosts
+        env:
+          # OIDC tokens are not issued to pull requests from forks.
+          CAN_OIDC: ${{ github.event.pull_request.head.repo.fork != true }}
+          HAS_OPENAI: ${{ secrets.OPENAI_API_KEY != '' }}
+          HOST: ${{ github.event.inputs.host || 'all' }}
+        run: |
+          run_claude=false; run_codex=false
+          if [ "$CAN_OIDC" = "true" ] && { [ "$HOST" = "all" ] || [ "$HOST" = "claude" ]; }; then run_claude=true; fi
+          if [ "$HAS_OPENAI" = "true" ] && { [ "$HOST" = "all" ] || [ "$HOST" = "codex" ]; }; then run_codex=true; fi
+          echo "run_claude=$run_claude" >> "$GITHUB_OUTPUT"
+          echo "run_codex=$run_codex" >> "$GITHUB_OUTPUT"
+          echo "claude: $run_claude  codex: $run_codex"
+
+  claude:
+    name: Claude Code
+    needs: plan
+    if: needs.plan.outputs.run_claude == 'true' && (needs.plan.outputs.runs != '[]' || needs.plan.outputs.baselines != '[]')
+    uses: ./.github/workflows/scenario-host.yml
+    secrets: inherit
+    with:
+      host: claude
+      install: npm install -g @anthropic-ai/claude-code
+      runs: ${{ needs.plan.outputs.runs }}
+      baselines: ${{ needs.plan.outputs.baselines }}
+
+  codex:
+    name: Codex
+    needs: plan
+    if: needs.plan.outputs.run_codex == 'true' && (needs.plan.outputs.runs != '[]' || needs.plan.outputs.baselines != '[]')
+    uses: ./.github/workflows/scenario-host.yml
+    secrets: inherit
+    with:
+      host: codex
+      install: npm install -g @openai/codex
+      runs: ${{ needs.plan.outputs.runs }}
+      baselines: ${{ needs.plan.outputs.baselines }}
+
+  report:
+    name: Summarize
+    needs: [plan, claude, codex]
+    if: always() && (needs.plan.outputs.runs != '[]' || needs.plan.outputs.baselines != '[]')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Scheduled and manual runs commit back, so they need a branch, not a detached SHA.
+          ref: ${{ github.event_name == 'pull_request' && github.ref || 'main' }}
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: all-results
+          pattern: eval-*
+
+      - name: Build summary
+        env:
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          # Pull requests only get the comment; scheduled and manual runs also
+          # refresh the block at the bottom of each skill's README.
+          python3 scripts/eval-report.py all-results --run-url "$RUN_URL" --trigger "${{ github.event_name }}" > summary.md
+          if [ "${{ github.event_name }}" != "pull_request" ]; then
+            for skill in $(python3 scripts/skillrepo.py list); do
+              python3 scripts/eval-report.py all-results --skill "$skill" --readme "skills/$skill/README.md" \
+                --run-url "$RUN_URL" --trigger "${{ github.event_name }}" > /dev/null
+            done
+          fi
+          cat summary.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Commit README results
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        run: |
+          if git diff --quiet -- skills/*/README.md; then
+            echo "READMEs unchanged; nothing to commit"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add skills/*/README.md
+          git commit -m "docs: refresh scenario eval results [skip ci]"
+          git pull --rebase origin main
+          git push origin HEAD:main
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const body = fs.readFileSync('summary.md', 'utf8');
+            const marker = '<!-- geenie-ai-skills-eval -->';
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number,
+            });
+            const existing = comments.find(c => c.body && c.body.includes(marker));
+            const payload = { owner: context.repo.owner, repo: context.repo.repo, body: `${marker}\n${body}` };
+            if (existing) {
+              await github.rest.issues.updateComment({ ...payload, comment_id: existing.id });
+            } else {
+              await github.rest.issues.createComment({ ...payload, issue_number: context.issue.number });
+            }
