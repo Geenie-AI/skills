@@ -102,7 +102,7 @@ jobs:
         if: env.HOST != 'codex'
         uses: ./.github/actions/anthropic-oidc
         with:
-          federation_rule_id: ${{ vars.ANTHROPIC_RELEASE_FEDERATION_RULE_ID }}
+          federation_rule_id: ${{ vars.ANTHROPIC_FEDERATION_RULE_ID }}
           organization_id: ${{ vars.ANTHROPIC_ORGANIZATION_ID }}
           service_account_id: ${{ vars.ANTHROPIC_SERVICE_ACCOUNT_ID }}
           workspace_id: ${{ vars.ANTHROPIC_WORKSPACE_ID }}
