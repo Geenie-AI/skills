@@ -19,7 +19,7 @@
         "./skills/agentic-architect"
       ],
       "displayName": "Agentic Architect",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "description": "Designs a new agentic solution or diagnoses and improves an existing one (a prompt, a skill set, a skill-to-agent assignment, an agent, the knowledge layer, or a whole system) for Claude Code, Claude Agent SDK, Claude API, OpenAI Agents SDK, OpenAI Responses API, Codex, or a generic framework, following OpenAI's Optimizing LLM Accuracy method. Use when asked to design, architect, review, optimize, or fix prompts, skills, agents, retrieval, or multi-agent pipelines, or when a pipeline hallucinates, ignores its schema, or needs an eval plan.",
       "author": {
         "name": "Geenie-AI"
