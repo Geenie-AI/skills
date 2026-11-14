@@ -185,22 +185,48 @@ if [ "$JUDGE_ONLY" -eq 0 ]; then
       # Docs: https://code.claude.com/docs/en/headless  (flags verified 2026-11-14)
       # acceptEdits lets the skill write files; Bash is limited to read-only
       # inspection commands via permission-rule prefixes. stream-json keeps the
-      # full event log in $RUN_LOG and echoes one line per tool call, so a long
-      # run shows progress instead of looking hung.
+      # full event log in $RUN_LOG and echoes one line per tool call. A tool
+      # call only arrives once fully generated, and writing architecture.md can
+      # take minutes, so partial messages drive a heartbeat line every 60s
+      # (block being generated, chars so far, seconds since the last event).
+      # Partial events are not written to $RUN_LOG.
       set +e
       (cd "$PROJECT" && claude -p "$(cat "$PROMPT_FILE")" \
-          --output-format stream-json --verbose \
+          --output-format stream-json --verbose --include-partial-messages \
           --permission-mode acceptEdits \
           --allowedTools "Read,Write,Edit,Glob,Grep,Bash(wc *),Bash(ls *),Bash(cat *),Bash(find *),Bash(grep *),Bash(python3 *)" \
           ${MODEL:+--model "$MODEL"} \
           ${CLAUDE_EXTRA_ARGS:-} < /dev/null) 2> "$OUT/run-stderr.txt" \
-        | tee "$RUN_LOG" | python3 -u -c '
-import json, sys
+        | python3 -u -c '
+import json, sys, threading, time
+log = open(sys.argv[1], "w")
+state = {"block": "waiting", "chars": 0, "last": time.time()}
+start = time.time()
+def beat():
+    while True:
+        time.sleep(60)
+        now = time.time()
+        print("  ~ %dm: %s, %d chars, last event %ds ago" % ((now - start) // 60, state["block"], state["chars"], now - state["last"]), flush=True)
+threading.Thread(target=beat, daemon=True).start()
 for line in sys.stdin:
+    state["last"] = time.time()
     try:
         e = json.loads(line)
     except ValueError:
+        log.write(line)
         continue
+    if e.get("type") == "stream_event":
+        ev = e.get("event", {})
+        if ev.get("type") == "content_block_start":
+            cb = ev.get("content_block", {})
+            state["block"] = cb.get("name") or cb.get("type", "?")
+            state["chars"] = 0
+        elif ev.get("type") == "content_block_delta":
+            d = ev.get("delta", {})
+            state["chars"] += len(d.get("partial_json") or d.get("text") or d.get("thinking") or "")
+        continue
+    log.write(line)
+    log.flush()
     if e.get("type") == "assistant":
         for c in e.get("message", {}).get("content", []):
             if c.get("type") == "tool_use":
@@ -209,7 +235,7 @@ for line in sys.stdin:
                 print("  .", c["name"], str(arg)[:100])
     elif e.get("type") == "result":
         print("  result:", e.get("subtype"), "| turns:", e.get("num_turns"), "| seconds:", round((e.get("duration_ms") or 0) / 1000))
-'
+' "$RUN_LOG"
       STATUS=${PIPESTATUS[0]}
       set -e
       ;;
