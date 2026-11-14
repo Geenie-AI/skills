@@ -1,25 +1,23 @@
 name: release
 
-# Tag vX.Y.Z (or vX.Y.Z-rc.N) on main to publish the repository:
-#   1. static validation of every skill, catalogue in sync
-#   2. the marketplace manifest's version must equal the tag
+# Run manually on main to publish the repository at the version in
+# .claude-plugin/marketplace.json, tagged vX.Y.Z (pre-release when the
+# version has '-', e.g. X.Y.Z-rc.N):
+#   1. the tag must not exist yet, or point at this commit (a re-run, which
+#      updates the existing release); static validation of every skill,
+#      catalogue in sync
+#   2. the CHANGELOG section for the version must exist
 #   3. the selected release scenarios (Claude Code authenticates with the
 #      job's GitHub OIDC token, see .github/actions/anthropic-oidc); a failing
 #      scenario does not stop the release, it marks it as failing
-#   4. one zip per skill plus scenario-results-<tag>.zip, and a GitHub
-#      release whose body is the matching CHANGELOG section plus the scenario
-#      results with links to the zip, the artifact and the run; pre-release
-#      when the version has '-'
+#   4. one zip per skill plus scenario-results-<tag>.zip, the tag on this
+#      commit, and a GitHub release whose body is the matching CHANGELOG
+#      section plus the scenario results with links to the zip, the artifact
+#      and the run
 #   5. the same results recorded under the tag in RELEASES.md on main
 #   6. the run ends red when any scenario failed, after the release is out
-#
-# A tag push runs the defaults below (claude, every skill, S08m). To pick
-# other scenarios, run the workflow manually with the tag chosen as the ref.
 
 on:
-  push:
-    tags:
-      - "v*"
   workflow_dispatch:
     inputs:
       host:
@@ -63,40 +61,29 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Resolve version from the tag
+      - name: Resolve the version and tag
         id: ver
         run: |
-          [ "$GITHUB_REF_TYPE" = "tag" ] || { echo "run this workflow on a vX.Y.Z tag, not a branch"; exit 1; }
-          TAG="${GITHUB_REF_NAME}"
-          VERSION="${TAG#v}"
+          [ "$GITHUB_REF" = "refs/heads/main" ] || { echo "run this workflow on main, not $GITHUB_REF"; exit 1; }
+          VERSION="$(python3 -c 'import json; print(json.load(open(".claude-plugin/marketplace.json"))["version"])')"
+          TAG="v$VERSION"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           case "$VERSION" in *-*) echo "prerelease=true" >> "$GITHUB_OUTPUT" ;; *) echo "prerelease=false" >> "$GITHUB_OUTPUT" ;; esac
-
-      - name: Tag must be on main
-        run: |
-          git fetch origin main --depth=200
-          git merge-base --is-ancestor "$GITHUB_SHA" origin/main || { echo "tag commit is not on main"; exit 1; }
+          # An existing tag is only accepted on this commit (a re-run).
+          git fetch origin --tags --force
+          if git rev-parse -q --verify "refs/tags/$TAG" > /dev/null; then
+            TAGGED="$(git rev-list -n 1 "$TAG")"
+            [ "$TAGGED" = "$GITHUB_SHA" ] || { echo "$TAG already tags $TAGGED; bump version in .claude-plugin/marketplace.json, run scripts/skillrepo.py sync, and add a CHANGELOG section"; exit 1; }
+            echo "$TAG already on this commit; re-running updates its release"
+          fi
+          echo "releasing $TAG from $GITHUB_SHA"
 
       - name: Static validation and catalogue check
         run: |
           for f in scripts/*.sh; do bash -n "$f"; done
           python3 scripts/validate.py
           python3 scripts/skillrepo.py sync --check
-
-      - name: Marketplace version equals the tag
-        env:
-          VERSION: ${{ steps.ver.outputs.version }}
-        run: |
-          python3 - <<'PY'
-          import json, os, sys
-          v = os.environ["VERSION"]
-          found = json.load(open(".claude-plugin/marketplace.json")).get("version")
-          if found != v:
-              print(f"version mismatch: tag is {v}, marketplace.json says {found}; set it, run scripts/skillrepo.py sync, and re-tag")
-              sys.exit(1)
-          print(f"marketplace agrees on {v}")
-          PY
 
       - name: Changelog section exists
         run: |
@@ -186,17 +173,26 @@ jobs:
           done
           ls -l dist
 
-      - name: Create GitHub release
+      # Creates the tag on this commit with the release; a re-run on the same
+      # version updates the existing release instead.
+      - name: Create or update GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.ver.outputs.tag }}
         run: |
-          ARGS=""
-          [ "${{ steps.ver.outputs.prerelease }}" = "true" ] && ARGS="--prerelease"
-          TITLE="Geenie-AI skills ${{ steps.ver.outputs.tag }}"
+          PRERELEASE="${{ steps.ver.outputs.prerelease }}"
+          TITLE="Geenie-AI skills $TAG"
           [ "${{ steps.scenarios.outputs.failed }}" = "true" ] && TITLE="$TITLE (scenarios failing)"
-          gh release create "${{ steps.ver.outputs.tag }}" dist/*.zip \
-            --title "$TITLE" \
-            --notes-file release-notes.md $ARGS
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            gh release upload "$TAG" dist/*.zip --clobber
+            gh release edit "$TAG" --title "$TITLE" --notes-file release-notes.md --prerelease="$PRERELEASE"
+          else
+            ARGS=""
+            [ "$PRERELEASE" = "true" ] && ARGS="--prerelease"
+            gh release create "$TAG" dist/*.zip --target "$GITHUB_SHA" \
+              --title "$TITLE" \
+              --notes-file release-notes.md $ARGS
+          fi
 
       - name: Record the release in RELEASES.md
         env:
