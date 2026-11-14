@@ -98,11 +98,11 @@ Loop owner: <who runs evaluate → hypothesis → change → re-evaluate>
 |---|---|---|---|
 
 ## 11. Changes (optimize)
-| Change | Artifact | Targets rows | Expected effect | How we will know (eval item ids) |
-|---|---|---|---|---|
-| <change> | <file> | D1, A1 | … | E001–E003 |
-| <change that fixes only audit rows> | <file> | A4 — hygiene (no failure targeted) | … | do-no-harm across all items |
-(When failures were supplied, every row names at least one failure `D<n>` row or carries the hygiene label.)
+| Change | Artifact | Failure rows | Other rows | Expected effect | How we will know (eval item ids) |
+|---|---|---|---|---|---|
+| <change> | <file> | D1 | A1 | … | E001–E003 |
+| <change that fixes only audit rows> | <file> | hygiene (no failure targeted) | A4 | … | do-no-harm across all items |
+(Failure rows is never blank and holds only `D<n>` ids or the exact text `hygiene (no failure targeted)`; a change that merely "supports" a failure without fixing it is hygiene. Write `n/a (no failures supplied)` when the user gave no failures.)
 
 ## 12. Artifacts emitted
 | File | Artifact kind | Serves rows | Emit gap |
@@ -135,7 +135,7 @@ Monitoring: <trace fields; pilot metrics: CSAT / decision accuracy / time to res
 - [ ] Every intake row has a provenance tag; stale profile answers were re-confirmed.
 - [ ] § 4a has a row for every prompt read and emitted; emitted prompts are `lean` or `lean (residual out of scope)`; a passing eval means restructuring is justified by cost or maintainability.
 - [ ] Every asked question has a reason; no question outside the scope's blocks; no permission confirmed that the design does not rely on.
-- [ ] Optimize with failures: every § 11 row names a failure `D<n>` row, or its Targets rows cell says `hygiene (no failure targeted)`; no audit-only row is left unlabelled.
+- [ ] Optimize with failures: read the § 11 Failure rows column top to bottom; every cell is `D<n>` ids or exactly `hygiene (no failure targeted)`, none blank, none holding only `A<n>` ids.
 - [ ] Every diagnosis row names a layer; every out-of-scope row is in § 15; no emitted artifact belongs to an out-of-scope layer.
 - [ ] `skill-assignment`: matrix, ledger, gaps and overlaps present; no user-invoked skill assigned to an agent (AS3).
 - [ ] Switching the target in § 0 would change only § 12.
