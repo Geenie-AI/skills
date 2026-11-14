@@ -2,7 +2,7 @@
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "geenie-ai-skills",
   "description": "Portable agent skills by Geenie-AI. Each skill is a plain Agent Skills folder that runs unchanged in Claude Code, Codex, Copilot, Gemini CLI, Cursor, Kiro and any other host that reads SKILL.md; this marketplace exposes each one as a Claude Code plugin.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "owner": {
     "name": "Geenie-AI",
     "url": "https://github.com/Geenie-AI"
