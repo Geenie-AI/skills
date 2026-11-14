@@ -133,5 +133,13 @@ planning/agentic-architect/      design documents the skill is built from
 Every scenario is run through the skill on each host that has an API key configured, then graded against its `expected-checks.md` by a judge prompt. The weekly and manually dispatched runs of the eval workflow refresh this table; pull-request runs post the same table as a comment instead.
 
 <!-- eval-results:start -->
-No scheduled run has completed yet.
+**0/1 passed** on claude.
+
+| Scenario | Host | Result | Up-front q | Deferred q | Judge checks |
+|---|---|---|---|---|---|
+| S08-prompt-scope | claude | FAIL | 1/3 | 1/2 | 0/0 |
+
+Last run: 2026-11-14 · trigger: workflow_dispatch · [workflow run](https://github.com/Geenie-AI/skills/actions/runs/43626768101).
+
+Non-blocking. Full output is in the workflow artifacts.
 <!-- eval-results:end -->
