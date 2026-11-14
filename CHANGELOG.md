@@ -15,6 +15,14 @@ model-facing file of any skill (checked by `scripts/validate.py --changed-files`
 
 ## [Unreleased]
 
+### agentic-architect
+
+#### Fixed
+
+- Changes template (template § 11): adds an example row for a hygiene
+  change and a review-checklist item, so a change that fixes only audit
+  rows carries `hygiene (no failure targeted)` (S08m check 7).
+
 ## [0.1.0] - 2026-11-14
 
 ### Repository
