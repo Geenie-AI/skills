@@ -12,7 +12,6 @@
   <a href="https://github.com/Geenie-AI/skills/releases/latest"><img src="https://img.shields.io/github/v/release/Geenie-AI/skills?display_name=tag&sort=semver" alt="latest release"></a>
   <a href="https://agentskills.io"><img src="https://img.shields.io/badge/Agent%20Skills-compatible-2ea44f" alt="Agent Skills compatible"></a>
   <a href="#install"><img src="https://img.shields.io/badge/Claude%20Code-marketplace-d97757" alt="Claude Code marketplace"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="license: MIT"></a>
 </p>
 
 <p align="center">
