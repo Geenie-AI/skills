@@ -1,21 +1,17 @@
-name: release
 
+name: release
 # Run manually on main to publish the repository at the version in
-# .claude-plugin/marketplace.json, tagged vX.Y.Z (pre-release when the
-# version has '-', e.g. X.Y.Z-rc.N):
-#   1. the tag must not exist yet, or point at this commit (a re-run, which
-#      updates the existing release); static validation of every skill,
-#      catalogue in sync
-#   2. the CHANGELOG section for the version must exist
-#   3. the selected release scenarios (Claude Code authenticates with the
-#      job's GitHub OIDC token, see .github/actions/anthropic-oidc); a failing
-#      scenario does not stop the release, it marks it as failing
-#   4. one zip per skill plus scenario-results-<tag>.zip, the tag on this
-#      commit, and a GitHub release whose body is the matching CHANGELOG
-#      section plus the scenario results with links to the zip, the artifact
-#      and the run
-#   5. the same results recorded under the tag in RELEASES.md on main
-#   6. the run ends red when any scenario failed, after the release is out
+# .claude-plugin/marketplace.json, tagged vX.Y.Z.
+#
+# Release process:
+# 1. Validate skills and catalogue.
+# 2. Verify changelog.
+# 3. Package the distributable skill ZIP files.
+# 4. Scan each ZIP with NVIDIA SkillSpector.
+# 5. Block only on HIGH or CRITICAL security findings.
+# 6. Run the selected release scenarios.
+# 7. Publish the GitHub release and update RELEASES.md.
+# 8. The run ends red when any release scenario failed.
 
 on:
   workflow_dispatch:
@@ -41,6 +37,7 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
+
     env:
       CI: "true"
       HOST: ${{ github.event.inputs.host || 'claude' }}
@@ -48,6 +45,7 @@ jobs:
       SCENARIO: ${{ github.event.inputs.scenario || 'S08m' }}
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       CODEX_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
     steps:
       - uses: actions/checkout@v5
         with:
@@ -64,20 +62,36 @@ jobs:
       - name: Resolve the version and tag
         id: ver
         run: |
-          [ "$GITHUB_REF" = "refs/heads/main" ] || { echo "run this workflow on main, not $GITHUB_REF"; exit 1; }
+          [ "$GITHUB_REF" = "refs/heads/main" ] || {
+            echo "Run this workflow on main, not $GITHUB_REF"
+            exit 1
+          }
+
           VERSION="$(python3 -c 'import json; print(json.load(open(".claude-plugin/marketplace.json"))["version"])')"
           TAG="v$VERSION"
+
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          case "$VERSION" in *-*) echo "prerelease=true" >> "$GITHUB_OUTPUT" ;; *) echo "prerelease=false" >> "$GITHUB_OUTPUT" ;; esac
-          # An existing tag is only accepted on this commit (a re-run).
+
+          case "$VERSION" in
+            *-*) echo "prerelease=true" >> "$GITHUB_OUTPUT" ;;
+            *) echo "prerelease=false" >> "$GITHUB_OUTPUT" ;;
+          esac
+
           git fetch origin --tags --force
+
           if git rev-parse -q --verify "refs/tags/$TAG" > /dev/null; then
             TAGGED="$(git rev-list -n 1 "$TAG")"
-            [ "$TAGGED" = "$GITHUB_SHA" ] || { echo "$TAG already tags $TAGGED; bump version in .claude-plugin/marketplace.json, run scripts/skillrepo.py sync, and add a CHANGELOG section"; exit 1; }
+
+            [ "$TAGGED" = "$GITHUB_SHA" ] || {
+              echo "$TAG already tags $TAGGED; bump the version, sync the catalogue and add a CHANGELOG section"
+              exit 1
+            }
+
             echo "$TAG already on this commit; re-running updates its release"
           fi
-          echo "releasing $TAG from $GITHUB_SHA"
+
+          echo "Releasing $TAG from $GITHUB_SHA"
 
       - name: Static validation and catalogue check
         run: |
@@ -87,15 +101,210 @@ jobs:
 
       - name: Changelog section exists
         run: |
-          python3 scripts/changelog-section.py "${{ steps.ver.outputs.version }}" > release-notes.md
+          python3 scripts/changelog-section.py \
+            "${{ steps.ver.outputs.version }}" > release-notes.md
+
           cat release-notes.md
+
+      # --------------------------------------------------
+      # PACKAGE SKILLS BEFORE EVALUATION
+      # --------------------------------------------------
+
+      - name: Package every skill
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: |
+          set -euo pipefail
+
+          mkdir -p dist
+
+          for skill in $(python3 scripts/skillrepo.py list); do
+            echo "Packaging $skill"
+
+            (
+              cd skills
+              zip -r "../dist/$skill-$VERSION.zip" "$skill" \
+                -x "$skill/README.md" \
+                -x '*.DS_Store' \
+                -x '*/__pycache__/*'
+            )
+          done
+
+          ls -lh dist/
+
+      # --------------------------------------------------
+      # NVIDIA SKILLSPECTOR SECURITY SCAN
+      # --------------------------------------------------
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install NVIDIA SkillSpector
+        run: |
+          uv tool install \
+            git+https://github.com/NVIDIA/skillspector.git@v2.13.1
+
+      - name: Scan distributable skills
+        id: security
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+        shell: bash
+        run: |
+          set -uo pipefail
+
+          mkdir -p dist/security-reports
+
+          status=0
+          count=0
+
+          for archive in dist/*-"$VERSION".zip; do
+            [ -f "$archive" ] || continue
+
+            count=$((count + 1))
+
+            name="$(basename "$archive" .zip)"
+            report="dist/security-reports/$name.json"
+
+            echo "::group::NVIDIA SkillSpector: $name"
+
+            echo "Scanning distributable: $archive"
+
+            # SkillSpector exit code 1 can mean a high risk score.
+            # Capture it and inspect individual finding severities below.
+            set +e
+
+            skillspector scan "$archive" \
+              --no-llm \
+              --format json \
+              --output "$report"
+
+            scan_exit=$?
+
+            set -e
+
+            # Inspect the JSON findings and apply our own severity policy.
+            if python3 - "$report" "$scan_exit" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+
+          report_path = Path(sys.argv[1])
+          scan_exit = int(sys.argv[2])
+
+          if scan_exit not in (0, 1):
+              print(f"::error::SkillSpector execution failed (exit {scan_exit})")
+              sys.exit(2)
+
+          if not report_path.is_file():
+              print("::error::SkillSpector did not produce a JSON report")
+              sys.exit(2)
+
+          try:
+              report = json.loads(report_path.read_text())
+          except (OSError, json.JSONDecodeError) as exc:
+              print(f"::error::Cannot read SkillSpector report: {exc}")
+              sys.exit(2)
+
+          issues = report.get("issues", [])
+
+          if not isinstance(issues, list):
+              print("::error::Invalid issues field in SkillSpector report")
+              sys.exit(2)
+
+          blocking = [
+              issue for issue in issues
+              if str(issue.get("severity", "")).upper()
+              in ("HIGH", "CRITICAL")
+          ]
+
+          for issue in issues:
+              severity = str(issue.get("severity", "UNKNOWN")).upper()
+              location = issue.get("location", {})
+              file = location.get("file", "unknown")
+              line = location.get("start_line", "?")
+              message = issue.get("message", issue.get("category", "Finding"))
+
+              print(f"{severity}: {file}:{line} - {message}")
+
+          if blocking:
+              print()
+              print(f"BLOCKED: {len(blocking)} HIGH/CRITICAL finding(s)")
+
+              for issue in blocking:
+                  severity = str(issue.get("severity", "")).upper()
+                  location = issue.get("location", {})
+                  print(
+                      f"::error::[{severity}] "
+                      f"{location.get('file', 'unknown')}:"
+                      f"{location.get('start_line', '?')} "
+                      f"{issue.get('message', issue.get('category', 'Finding'))}"
+                  )
+
+              sys.exit(1)
+
+          print()
+          print("PASSED: No HIGH or CRITICAL findings.")
+
+          if scan_exit == 1:
+              print(
+                  "Note: SkillSpector returned exit code 1, "
+                  "but no HIGH/CRITICAL individual findings were found. "
+                  "This is non-blocking under the Geenie AI policy."
+              )
+
+          sys.exit(0)
+          PY
+            then
+              echo "Security policy passed: $name"
+            else
+              echo "::error::Security policy failed: $name"
+              status=1
+            fi
+
+            echo "::endgroup::"
+          done
+
+          if [ "$count" -eq 0 ]; then
+            echo "::error::No distributable skill ZIPs found"
+            exit 1
+          fi
+
+          echo "Scanned $count distributable skill package(s)"
+
+          exit "$status"
+
+      - name: Upload SkillSpector security reports
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: skillspector-security-${{ steps.ver.outputs.tag }}
+          path: dist/security-reports/
+          if-no-files-found: warn
+          retention-days: 90
+
+      # --------------------------------------------------
+      # RELEASE EVALUATION
+      # --------------------------------------------------
 
       - name: Install host CLIs
         run: |
-          case "$HOST" in claude|all) npm install -g @anthropic-ai/claude-code ;; esac
-          case "$HOST" in codex|all)
-            [ -n "$OPENAI_API_KEY" ] || { echo "host $HOST needs the OPENAI_API_KEY secret"; exit 1; }
-            npm install -g @openai/codex ;;
+          case "$HOST" in
+            claude|all)
+              npm install -g @anthropic-ai/claude-code
+              ;;
+          esac
+
+          case "$HOST" in
+            codex|all)
+              [ -n "$OPENAI_API_KEY" ] || {
+                echo "Host $HOST needs the OPENAI_API_KEY secret"
+                exit 1
+              }
+
+              npm install -g @openai/codex
+              ;;
           esac
 
       - name: Authenticate to the Claude API (OIDC)
@@ -110,31 +319,55 @@ jobs:
       - name: Release scenarios
         id: scenarios
         run: |
-          PLAN="$(python3 scripts/skillrepo.py plan-eval --skill "$SKILL" --scenario "$SCENARIO")"
+          PLAN="$(python3 scripts/skillrepo.py plan-eval \
+            --skill "$SKILL" --scenario "$SCENARIO")"
+
           for skill in $(python3 scripts/skillrepo.py list); do
             if [ "$SKILL" = "all" ] || [ "$SKILL" = "$skill" ]; then
-              echo "$PLAN" | python3 -c 'import json,sys; s=sys.argv[1]; sys.exit(0 if any(r["skill"]==s for r in json.load(sys.stdin)["runs"]) else 1)' "$skill" \
+              echo "$PLAN" | python3 -c \
+                'import json,sys; s=sys.argv[1]; sys.exit(0 if any(r["skill"]==s for r in json.load(sys.stdin)["runs"]) else 1)' "$skill" \
                 || echo "::warning::$skill has no scenario matching '$SCENARIO'; skipped"
             fi
           done
+
           # Baselines first so the runs graded against them find their output.
-          echo "$PLAN" | python3 -c 'import json,sys; p=json.load(sys.stdin); [print(r["skill"], r["scenario"], r["answers"], r["label"]) for r in p["baselines"] + p["runs"]]' > "$RUNNER_TEMP/plan.txt"
-          [ -s "$RUNNER_TEMP/plan.txt" ] || { echo "no scenarios matched skill '$SKILL' and scenario '$SCENARIO'"; exit 1; }
-          case "$HOST" in all) hosts="claude codex" ;; *) hosts="$HOST" ;; esac
+          echo "$PLAN" | python3 -c \
+            'import json,sys; p=json.load(sys.stdin); [print(r["skill"], r["scenario"], r["answers"], r["label"]) for r in p["baselines"] + p["runs"]]' \
+            > "$RUNNER_TEMP/plan.txt"
+
+          [ -s "$RUNNER_TEMP/plan.txt" ] || {
+            echo "No scenarios matched skill '$SKILL' and scenario '$SCENARIO'"
+            exit 1
+          }
+
+          case "$HOST" in
+            all) hosts="claude codex" ;;
+            *) hosts="$HOST" ;;
+          esac
+
           status=0
+
           for host in $hosts; do
             while read -r skill scenario answers label; do
-              scripts/run-scenario.sh --skill "$skill" --host "$host" --scenario "$scenario" \
-                --answers "$answers" --label "$label" \
-                --out "eval-out/$skill/$label-$host" < /dev/null || status=1
+              scripts/run-scenario.sh \
+                --skill "$skill" \
+                --host "$host" \
+                --scenario "$scenario" \
+                --answers "$answers" \
+                --label "$label" \
+                --out "eval-out/$skill/$label-$host" \
+                < /dev/null || status=1
             done < "$RUNNER_TEMP/plan.txt"
           done
-          # Failing scenarios mark the release instead of stopping it; the
-          # last step turns the run red.
-          [ "$status" -eq 0 ] && echo "failed=false" >> "$GITHUB_OUTPUT" || echo "failed=true" >> "$GITHUB_OUTPUT"
 
-      # Uploaded before anything else so the summary can link to it, and on
-      # failure too, where no release is published.
+          [ "$status" -eq 0 ] && \
+            echo "failed=false" >> "$GITHUB_OUTPUT" || \
+            echo "failed=true" >> "$GITHUB_OUTPUT"
+
+      # --------------------------------------------------
+      # EVALUATION REPORTS
+      # --------------------------------------------------
+
       - name: Upload eval results
         id: artifact
         if: always()
@@ -151,30 +384,38 @@ jobs:
           ARTIFACT_URL: ${{ steps.artifact.outputs.artifact-url }}
           TAG: ${{ steps.ver.outputs.tag }}
         run: |
-          # The zip is attached to the release (permanent); the artifact expires.
           mkdir -p dist
-          [ -d eval-out ] && (cd eval-out && zip -r "../dist/scenario-results-$TAG.zip" . -x '*/project/*')
+
+          [ -d eval-out ] && \
+            (cd eval-out && zip -r "../dist/scenario-results-$TAG.zip" . -x '*/project/*')
+
           RESULTS_URL="${{ github.server_url }}/${{ github.repository }}/releases/download/$TAG/scenario-results-$TAG.zip"
+
           [ -f "dist/scenario-results-$TAG.zip" ] || RESULTS_URL=""
+
           echo "RESULTS_URL=$RESULTS_URL" >> "$GITHUB_ENV"
           echo "ARTIFACT_URL=$ARTIFACT_URL" >> "$GITHUB_ENV"
+
           python3 scripts/release-history.py eval-out --tag "$TAG" \
-            --host "$HOST" --skill "$SKILL" --scenario "$SCENARIO" --run-url "$RUN_URL" \
-            ${RESULTS_URL:+--results-url "$RESULTS_URL"} ${ARTIFACT_URL:+--artifact-url "$ARTIFACT_URL"} > scenario-results.md
+            --host "$HOST" \
+            --skill "$SKILL" \
+            --scenario "$SCENARIO" \
+            --run-url "$RUN_URL" \
+            ${RESULTS_URL:+--results-url "$RESULTS_URL"} \
+            ${ARTIFACT_URL:+--artifact-url "$ARTIFACT_URL"} \
+            > scenario-results.md
+
           cat scenario-results.md >> "$GITHUB_STEP_SUMMARY"
-          { echo; cat scenario-results.md; } >> release-notes.md
 
-      - name: Package every skill
-        env:
-          VERSION: ${{ steps.ver.outputs.version }}
-        run: |
-          for skill in $(python3 scripts/skillrepo.py list); do
-            (cd skills && zip -r "../dist/$skill-$VERSION.zip" "$skill" -x "$skill/README.md" -x '*.DS_Store' -x '*/__pycache__/*')
-          done
-          ls -l dist
+          {
+            echo
+            cat scenario-results.md
+          } >> release-notes.md
 
-      # Creates the tag on this commit with the release; a re-run on the same
-      # version updates the existing release instead.
+      # --------------------------------------------------
+      # PUBLISH RELEASE
+      # --------------------------------------------------
+
       - name: Create or update GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -182,16 +423,27 @@ jobs:
         run: |
           PRERELEASE="${{ steps.ver.outputs.prerelease }}"
           TITLE="Geenie-AI skills $TAG"
-          [ "${{ steps.scenarios.outputs.failed }}" = "true" ] && TITLE="$TITLE (scenarios failing)"
+
+          [ "${{ steps.scenarios.outputs.failed }}" = "true" ] && \
+            TITLE="$TITLE (scenarios failing)"
+
           if gh release view "$TAG" > /dev/null 2>&1; then
             gh release upload "$TAG" dist/*.zip --clobber
-            gh release edit "$TAG" --title "$TITLE" --notes-file release-notes.md --prerelease="$PRERELEASE"
+
+            gh release edit "$TAG" \
+              --title "$TITLE" \
+              --notes-file release-notes.md \
+              --prerelease="$PRERELEASE"
           else
             ARGS=""
+
             [ "$PRERELEASE" = "true" ] && ARGS="--prerelease"
-            gh release create "$TAG" dist/*.zip --target "$GITHUB_SHA" \
+
+            gh release create "$TAG" dist/*.zip \
+              --target "$GITHUB_SHA" \
               --title "$TITLE" \
-              --notes-file release-notes.md $ARGS
+              --notes-file release-notes.md \
+              $ARGS
           fi
 
       - name: Record the release in RELEASES.md
@@ -200,20 +452,34 @@ jobs:
         run: |
           git fetch origin main
           git checkout -B main origin/main
-          python3 scripts/release-history.py eval-out --tag "${{ steps.ver.outputs.tag }}" \
-            --host "$HOST" --skill "$SKILL" --scenario "$SCENARIO" --run-url "$RUN_URL" \
-            ${RESULTS_URL:+--results-url "$RESULTS_URL"} ${ARTIFACT_URL:+--artifact-url "$ARTIFACT_URL"} \
+
+          python3 scripts/release-history.py eval-out \
+            --tag "${{ steps.ver.outputs.tag }}" \
+            --host "$HOST" \
+            --skill "$SKILL" \
+            --scenario "$SCENARIO" \
+            --run-url "$RUN_URL" \
+            ${RESULTS_URL:+--results-url "$RESULTS_URL"} \
+            ${ARTIFACT_URL:+--artifact-url "$ARTIFACT_URL"} \
             --history RELEASES.md > /dev/null
-          git diff --quiet -- RELEASES.md && { echo "RELEASES.md unchanged"; exit 0; }
+
+          git diff --quiet -- RELEASES.md && {
+            echo "RELEASES.md unchanged"
+            exit 0
+          }
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
           git add RELEASES.md
+
           git commit -m "docs: release history for ${{ steps.ver.outputs.tag }} [skip ci]"
+
           git pull --rebase origin main
           git push origin HEAD:main
 
       - name: Fail the run when a release scenario failed
         if: steps.scenarios.outputs.failed == 'true'
         run: |
-          echo "::error::release ${{ steps.ver.outputs.tag }} was published with failing scenarios; see the release notes"
+          echo "::error::Release ${{ steps.ver.outputs.tag }} was published with failing scenarios; see the release notes"
           exit 1
