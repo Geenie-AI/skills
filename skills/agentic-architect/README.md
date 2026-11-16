@@ -133,5 +133,29 @@ planning/agentic-architect/      design documents the skill is built from
 Every scenario is run through the skill on each host that has an API key configured, then graded against its `expected-checks.md` by a judge prompt. The weekly and manually dispatched runs of the eval workflow refresh this table; pull-request runs post the same table as a comment instead.
 
 <!-- eval-results:start -->
-No scheduled run has completed yet.
+**0/17 passed** on claude.
+
+| Scenario | Host | Result | Up-front q | Deferred q | Judge checks |
+|---|---|---|---|---|---|
+| S01-chained-prompt | claude | FAIL | 0/6 | 0/4 | 0/0 |
+| S01b-permissions-refused | claude | FAIL | 0/6 | 0/4 | 0/0 |
+| S02-hr-helpdesk | claude | FAIL | 8/8 | 1/4 | 0/0 |
+| S03-finetune-path | claude | FAIL | 0/6 | 0/4 | 0/0 |
+| S04-finetune-unwarranted | claude | FAIL | 0/8 | 0/4 | 0/0 |
+| S05-target-switch | claude | FAIL | 0/8 | 0/4 | 0/0 |
+| S05-target-switch-generic | claude | FAIL | 0/8 | 0/4 | 0/0 |
+| S06-missing-answers | claude | FAIL | 0/8 | 0/4 | 0/0 |
+| S07-profile | claude | FAIL | 0/1 | 0/3 | 0/0 |
+| S07b-profile-optimize | claude | FAIL | 0/5 | 0/3 | 0/0 |
+| S08-prompt-scope | claude | FAIL | 0/3 | 0/2 | 0/0 |
+| S08m-prompt-scope-mini | claude | FAIL | 0/3 | 0/2 | 0/0 |
+| S09-skill-assignment | claude | FAIL | 0/2 | 0/1 | 0/0 |
+| S10-agent-scope | claude | FAIL | 0/5 | 0/3 | 0/0 |
+| S11a-minimal-asking-optimize | claude | FAIL | 0/3 | 0/1 | 0/0 |
+| S11b-minimal-asking-design | claude | FAIL | 0/8 | 0/4 | 0/0 |
+| S12-audit-review | claude | FAIL | 0/1 | 0/1 | 0/0 |
+
+Last run: 2026-11-16 · trigger: schedule · [workflow run](https://github.com/Geenie-AI/skills/actions/runs/43898228291).
+
+Non-blocking. Full output is in the workflow artifacts.
 <!-- eval-results:end -->
